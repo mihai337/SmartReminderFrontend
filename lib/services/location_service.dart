@@ -1,5 +1,4 @@
 import 'package:geolocator/geolocator.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:smartreminders/models/saved_location.dart';
 
 class LocationService {
@@ -33,13 +32,9 @@ class LocationService {
   }
 
   Stream<List<SavedLocation>> getSavedLocations(String userId) {
-    // return _firestore.collection('locations')
-    //     .where('userId', isEqualTo: userId)
-    //     .orderBy('createdAt', descending: true)
-    //     .snapshots()
-    //     .map((snapshot) =>
-    //         snapshot.docs.map((doc) => SavedLocation.fromJson(doc.data())).toList());
-    throw UnimplementedError();
+    // Firestore integration is currently disabled for this build.
+    // Return an empty stream so the UI can handle "no locations" gracefully.
+    return Stream.value(<SavedLocation>[]);
   }
 
   bool isInGeofence(double currentLat, double currentLng, SavedLocation location) {

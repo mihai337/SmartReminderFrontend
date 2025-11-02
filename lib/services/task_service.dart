@@ -1,39 +1,42 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:smartreminders/models/task.dart';
 import 'package:smartreminders/models/task_history.dart';
+import 'package:smartreminders/services/api_service.dart';
 
 class TaskService {
-  // final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final apiClient = ApiClient();
 
   Future<void> createTask(Task task) async {
-    // await _firestore.collection('tasks').doc(task.id).set(task.toJson());
-    throw UnimplementedError();
+    // Firestore integration disabled for local build - no-op implementation.
+    var testTask = {
+      "title": "Test 10",
+      "description":"This is a location test from flutter app",
+      "status":"PENDING",
+      "profile":"HOME",
+      "trigger":{
+        "type":"LOCATION",
+        "longitude":21.2255,
+        "latitude": 45.7200,
+        "radius": 50.0,
+        "onEnter":true
+      }
+    };
+    await apiClient.post('/api/task', testTask);
+    return Future.value();
   }
 
   Future<void> updateTask(Task task) async {
-    // await _firestore.collection('tasks').doc(task.id).update(task.toJson());
-    throw UnimplementedError();
+    // Firestore integration disabled for local build - no-op implementation.
+    return Future.value();
   }
 
   Future<void> deleteTask(String taskId) async {
-    // await _firestore.collection('tasks').doc(taskId).delete();
-    throw UnimplementedError();
+    // Firestore integration disabled for local build - no-op implementation.
+    return Future.value();
   }
 
   Stream<List<Task>> getActiveTasks(String userId, {TaskCategory? category}) {
-    // Query query = _firestore.collection('tasks')
-    //     .where('userId', isEqualTo: userId)
-    //     .where('isCompleted', isEqualTo: false)
-    //     .orderBy('createdAt', descending: true);
-    //
-    // if (category != null && category != TaskCategory.all) {
-    //   query = query.where('category', isEqualTo: category.name);
-    // }
-    //
-    // return query.snapshots().map((snapshot) =>
-    //     snapshot.docs.map((doc) => Task.fromJson(doc.data() as Map<String, dynamic>)).toList());
-    return Stream.fromIterable(List.empty());
-    throw UnimplementedError();
+    // return empty stream by default
+    return Stream.value(apiClient.get("/api/task") as List<Task>);
   }
 
   Future<void> completeTask(Task task) async {
@@ -42,41 +45,26 @@ class TaskService {
       isCompleted: true,
       completedAt: now,
       isSnoozed: false,
-      updatedAt: now,
     );
     await updateTask(updatedTask);
-    await _addTaskHistory(task.id, task.userId, task.title, HistoryAction.completed);
+    await _addTaskHistory(task.id, task.title, HistoryAction.completed);
   }
 
   Future<void> snoozeTask(Task task, DateTime snoozeUntil) async {
     final updatedTask = task.copyWith(
       isSnoozed: true,
       snoozeUntil: snoozeUntil,
-      updatedAt: DateTime.now(),
     );
     await updateTask(updatedTask);
-    await _addTaskHistory(task.id, task.userId, task.title, HistoryAction.snoozed);
+    await _addTaskHistory(task.id, task.title, HistoryAction.snoozed);
   }
 
-  Future<void> _addTaskHistory(String taskId, String userId, String taskTitle, HistoryAction action) async {
-    // final history = TaskHistory(
-    //   id: _firestore.collection('task_history').doc().id,
-    //   taskId: taskId,
-    //   userId: userId,
-    //   taskTitle: taskTitle,
-    //   action: action,
-    //   timestamp: DateTime.now(),
-    // );
-    // await _firestore.collection('task_history').doc(history.id).set(history.toJson());
+  Future<void> _addTaskHistory(String taskId, String taskTitle, HistoryAction action) async {
+    // Firestore integration disabled - no-op for history.
+    return Future.value();
   }
 
   Stream<List<TaskHistory>> getTaskHistory(String userId) {
-    // return _firestore.collection('task_history')
-    //     .where('userId', isEqualTo: userId)
-    //     .orderBy('timestamp', descending: true)
-    //     .snapshots()
-    //     .map((snapshot) =>
-    //         snapshot.docs.map((doc) => TaskHistory.fromJson(doc.data())).toList());
-    throw UnimplementedError();
+    return Stream.value(<TaskHistory>[]);
   }
 }

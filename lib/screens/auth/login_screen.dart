@@ -16,7 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
     
-    final user = await _authService.signInWithGoogle();
+    final user = await _authService.loginWithGoogle();
     
     if (!mounted) return;
     
@@ -36,46 +36,104 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF5B7FFF), Color(0xFF8B7FFF)],
+          ),
+        ),
+        child: SafeArea(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Spacer(),
-              Icon(
-                Icons.notifications_active,
-                size: 80,
-                color: Theme.of(context).colorScheme.primary,
+              const Spacer(flex: 2),
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: const Icon(Icons.notifications, size: 50, color: Color(0xFF5B7FFF)),
               ),
-              const SizedBox(height: 24),
-              Text(
-                'Smart Reminders',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 32),
+              const SizedBox(height: 32),
+              const Text(
+                'SmartRemind',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                'Never forget what matters',
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
+              const SizedBox(height: 16),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 48),
+                child: Text(
+                  'Never miss what matters with location, time,\nand WiFi-based reminders',
+                  style: TextStyle(fontSize: 16, color: Colors.white),
+                  textAlign: TextAlign.center,
+                ),
               ),
-              const SizedBox(height: 48),
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton.icon(
-                      onPressed: _signInWithGoogle,
-                      icon: const Icon(Icons.login, color: Colors.white),
-                      label: const Text('Sign in with Google'),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 56),
+              const Spacer(flex: 3),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Welcome back',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1A1A1A),
+                        ),
                       ),
-                    ),
-              const Spacer(),
-              Text(
-                'Location, time, and WiFi-based reminders',
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Sign in to manage your smart\nreminders',
+                        style: TextStyle(fontSize: 16, color: Color(0xFF666666)),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 32),
+                      _isLoading
+                          ? const CircularProgressIndicator()
+                          : SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: _signInWithGoogle,
+                                icon: Image.network(
+                                  'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
+                                  width: 24,
+                                  height: 24,
+                                ),
+                                label: const Text(
+                                  'Continue with Google',
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  side: const BorderSide(color: Color(0xFFE8E8E8)),
+                                  foregroundColor: const Color(0xFF1A1A1A),
+                                ),
+                              ),
+                            ),
+                      const SizedBox(height: 24),
+                      const Text(
+                        'By continuing, you agree to our Terms of Service\nand Privacy Policy',
+                        style: TextStyle(fontSize: 12, color: Color(0xFF999999)),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
               ),
+              const Spacer(),
             ],
           ),
         ),

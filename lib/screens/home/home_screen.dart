@@ -7,7 +7,6 @@ import 'package:smartreminders/screens/task/task_history_screen.dart';
 import 'package:smartreminders/screens/location/add_location_screen.dart';
 import 'package:smartreminders/screens/auth/login_screen.dart';
 import 'package:smartreminders/widgets/task_card.dart';
-import 'package:smartreminders/widgets/category_chip.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,11 +25,127 @@ class _HomeScreenState extends State<HomeScreen> {
     final userId = _authService.currentUser?.uid ?? '';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Tasks'),
-        actions: [
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            _buildCategoryTabs(),
+            Expanded(
+              child: StreamBuilder<List<Task>>(
+                stream: _taskService.getActiveTasks(
+                  userId,
+                  category: _selectedCategory == TaskCategory.all ? null : _selectedCategory,
+                ),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return _buildEmptyState();
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(20),
+                    itemCount: snapshot.data!.length,
+                    itemBuilder: (context, index) {
+                      final task = snapshot.data![index];
+                      return TaskCard(
+                        task: task,
+                        onComplete: () => _taskService.completeTask(task),
+                        onSnooze: (duration) {
+                          final snoozeUntil = DateTime.now().add(duration);
+                          _taskService.snoozeTask(task, snoozeUntil);
+                        },
+                        onDelete: () => _taskService.deleteTask(task.id),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (context) {
+              return Dialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.9,
+                    maxWidth: 600,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.85,
+                        child: AddTaskScreen(isModal: true),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        },
+        child: const Icon(Icons.add, size: 28),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    final userId = _authService.currentUser?.uid ?? '';
+    
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: const Color(0xFF5B7FFF),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(Icons.notifications, color: Colors.white, size: 28),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'My Reminders',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+                StreamBuilder<List<Task>>(
+                  stream: _taskService.getActiveTasks(userId),
+                  builder: (context, snapshot) {
+                    final count = snapshot.data?.length ?? 0;
+                    return Text(
+                      '$count active',
+                      style: const TextStyle(fontSize: 14, color: Color(0xFF666666)),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
           PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.primary),
+            icon: const Icon(Icons.menu, color: Color(0xFF1A1A1A)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             onSelected: (value) async {
               if (value == 'add_location') {
                 Navigator.of(context).push(
@@ -83,72 +198,57 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Column(
+    );
+  }
+
+  Widget _buildCategoryTabs() {
+    return Container(
+      height: 70,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
         children: [
-          _buildCategoryFilter(),
-          Expanded(
-            child: StreamBuilder<List<Task>>(
-              stream: _taskService.getActiveTasks(
-                userId,
-                category: _selectedCategory == TaskCategory.all ? null : _selectedCategory,
-              ),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return _buildEmptyState();
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: snapshot.data!.length,
-                  itemBuilder: (context, index) {
-                    final task = snapshot.data![index];
-                    return TaskCard(
-                      task: task,
-                      onComplete: () => _taskService.completeTask(task),
-                      onSnooze: (duration) {
-                        final snoozeUntil = DateTime.now().add(duration);
-                        _taskService.snoozeTask(task, snoozeUntil);
-                      },
-                      onDelete: () => _taskService.deleteTask(task.id),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
+          _buildCategoryTab(Icons.notifications, TaskCategory.all),
+          const SizedBox(width: 12),
+          _buildCategoryTab(Icons.home, TaskCategory.home),
+          const SizedBox(width: 12),
+          _buildCategoryTab(Icons.work, TaskCategory.work),
+          const SizedBox(width: 12),
+          _buildCategoryTab(Icons.school, TaskCategory.school),
+          const SizedBox(width: 12),
+          _buildCategoryTab(Icons.history, null, isHistory: true),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const AddTaskScreen()),
-          );
-        },
-        child: const Icon(Icons.add),
       ),
     );
   }
 
-  Widget _buildCategoryFilter() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: TaskCategory.values.map((category) {
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: CategoryChip(
-                category: category,
-                isSelected: _selectedCategory == category,
-                onSelected: () => setState(() => _selectedCategory = category),
-              ),
-            );
-          }).toList(),
+  Widget _buildCategoryTab(IconData icon, TaskCategory? category, {bool isHistory = false}) {
+    final isSelected = !isHistory && category == _selectedCategory;
+    
+    return GestureDetector(
+      onTap: () {
+        if (isHistory) {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const TaskHistoryScreen()),
+          );
+        } else if (category != null) {
+          setState(() => _selectedCategory = category);
+        }
+      },
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF5B7FFF) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF5B7FFF) : const Color(0xFFE8E8E8),
+            width: 2,
+          ),
+        ),
+        child: Icon(
+          icon,
+          color: isSelected ? Colors.white : const Color(0xFF666666),
+          size: 24,
         ),
       ),
     );
@@ -162,17 +262,17 @@ class _HomeScreenState extends State<HomeScreen> {
           Icon(
             Icons.check_circle_outline,
             size: 80,
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+            color: const Color(0xFF5B7FFF).withValues(alpha: 0.3),
           ),
           const SizedBox(height: 16),
-          Text(
+          const Text(
             'No tasks yet',
-            style: Theme.of(context).textTheme.titleMedium,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A)),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'Tap + to create your first reminder',
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: TextStyle(fontSize: 14, color: Color(0xFF666666)),
           ),
         ],
       ),

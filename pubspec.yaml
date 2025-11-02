@@ -16,6 +16,7 @@ dependencies:
   google_maps_flutter: ^2.0.0
   geolocator: ^14.0.2
   google_sign_in: ^7.2.0
+  http: '>=0.15.0'
   cloud_firestore: '>=5.5.0'
   firebase_auth: '>=5.3.3'
   firebase_core: '>=2.21.1'

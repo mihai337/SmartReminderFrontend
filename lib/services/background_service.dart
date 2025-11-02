@@ -28,7 +28,8 @@ class BackgroundService {
       return;
     }
     try {
-      await Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
+      // `isInDebugMode` is deprecated. Use Workmanager's debug handlers if needed.
+      await Workmanager().initialize(callbackDispatcher);
     } catch (e) {
       print('Failed to initialize background service: $e');
     }
