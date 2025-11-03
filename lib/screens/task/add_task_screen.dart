@@ -29,6 +29,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   final WiFiService _wifiService = WiFiService();
 
   TaskCategory _selectedCategory = TaskCategory.home;
+  TaskProfile _selectedProfile = TaskProfile.HOME;
   TriggerType _selectedTriggerType = TriggerType.time;
   StateChange? _selectedStateChange;
   SavedLocation? _selectedLocation;
@@ -58,6 +59,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     if (userId == null) return;
 
     Map<String, dynamic> triggerConfig = {};
+    Trigger? trigger;
 
     if (_selectedTriggerType == TriggerType.location) {
       if (_selectedLocation == null) {
@@ -66,6 +68,16 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         );
         return;
       }
+
+      // Build a LocationTrigger for the backend.
+      trigger = LocationTrigger(
+        latitude: _selectedLocation!.latitude,
+        longitude: _selectedLocation!.longitude,
+        radius: _selectedLocation!.radiusMeters,
+        onEnter: _selectedStateChange == StateChange.enter,
+      );
+
+      // Keep a legacy triggerConfig as well.
       triggerConfig = {
         'locationId': _selectedLocation!.id,
         'locationName': _selectedLocation!.name,
@@ -80,6 +92,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         );
         return;
       }
+
+      trigger = TimeTrigger(dateTime: _selectedDateTime);
       triggerConfig = {'dateTime': _selectedDateTime!.toIso8601String()};
     } else if (_selectedTriggerType == TriggerType.wifi) {
       if (_selectedWiFiSSID == null) {
@@ -88,17 +102,22 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         );
         return;
       }
+      // Backend doesn't have a WiFi trigger type; include ssid in triggerConfig
+      // and leave polymorphic trigger null so the backend can interpret it as needed.
       triggerConfig = {'ssid': _selectedWiFiSSID!};
+      trigger = null;
     }
 
     final task = Task(
       id: FirebaseFirestore.instance.collection('tasks').doc().id,
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim(),
+      profile: _selectedProfile,
       category: _selectedCategory,
       triggerType: _selectedTriggerType,
       triggerConfig: triggerConfig,
       stateChange: _selectedStateChange,
+      trigger: trigger,
     );
 
     await _taskService.createTask(task);
@@ -158,6 +177,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           ),
           const SizedBox(height: 12),
           _buildCategorySelector(),
+          const SizedBox(height: 16),
+          const Text(
+            'Profile',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A)),
+          ),
+          const SizedBox(height: 12),
+          _buildProfileSelector(),
           const SizedBox(height: 24),
           const Text(
             'Remind me when',
@@ -307,6 +333,41 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileSelector() {
+    return Row(
+      children: [
+        _buildProfileButton('Home', TaskProfile.HOME),
+        const SizedBox(width: 12),
+        _buildProfileButton('Work', TaskProfile.WORK),
+        const SizedBox(width: 12),
+        _buildProfileButton('School', TaskProfile.SCHOOL),
+      ],
+    );
+  }
+
+  Widget _buildProfileButton(String label, TaskProfile profile) {
+    final isSelected = _selectedProfile == profile;
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedProfile = profile),
+        child: AnimatedContainer(
+          duration: _animDuration,
+          curve: _animCurve,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: isSelected ? _withOpacity(_primaryColor, 0.12) : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: isSelected ? _primaryColor : const Color(0xFFE8E8E8), width: isSelected ? 2 : 1),
+          ),
+          child: Center(
+            child: Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isSelected ? _primaryColor : const Color(0xFF666666))),
           ),
         ),
       ),

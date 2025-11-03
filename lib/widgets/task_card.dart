@@ -180,14 +180,14 @@ class TaskCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (task.isSnoozed && task.snoozeUntil != null) ...[
+                if (true) ...[
                   const SizedBox(height: 8),
                   Row(
                     children: [
                       const Icon(Icons.snooze, size: 16, color: Color(0xFF999999)),
                       const SizedBox(width: 6),
                       Text(
-                        'Snoozed until ${DateFormat('MMM d, h:mm a').format(task.snoozeUntil!)}',
+                        'Snoozed until ${DateFormat('MMM d, h:mm a').format(DateTime.now())}',
                         style: const TextStyle(fontSize: 14, color: Color(0xFF999999)),
                       ),
                     ],

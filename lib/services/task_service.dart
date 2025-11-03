@@ -1,12 +1,18 @@
+import 'dart:convert';
+
 import 'package:smartreminders/models/task.dart';
 import 'package:smartreminders/models/task_history.dart';
 import 'package:smartreminders/services/api_service.dart';
 
 class TaskService {
-  final apiClient = ApiClient();
+  /// Use ApiClient (defined in api_service.dart) which performs HTTP requests
+  /// with Firebase token authentication. You can change its base URL there.
+  TaskService() : _api = ApiClient();
+
+  final ApiClient _api;
 
   Future<void> createTask(Task task) async {
-    // Firestore integration disabled for local build - no-op implementation.
+
     var testTask = {
       "title": "Test 10",
       "description":"This is a location test from flutter app",
@@ -20,47 +26,88 @@ class TaskService {
         "onEnter":true
       }
     };
-    await apiClient.post('/api/task', testTask);
-    return Future.value();
+
+    
+
+    try {
+      final resp = await _api.post('/api/task', testTask);
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        throw Exception('Create task failed: ${resp.statusCode} ${resp.body}');
+      }
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<void> updateTask(Task task) async {
-    // Firestore integration disabled for local build - no-op implementation.
-    return Future.value();
+    try {
+      final id = task.id;
+      final resp = await _api.put('/api/task/$id', task.toJson());
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        throw Exception('Update task failed: ${resp.statusCode} ${resp.body}');
+      }
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<void> deleteTask(String taskId) async {
-    // Firestore integration disabled for local build - no-op implementation.
-    return Future.value();
+    try {
+      final resp = await _api.delete('/api/task/$taskId');
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        throw Exception('Delete task failed: ${resp.statusCode} ${resp.body}');
+      }
+    } catch (e) {
+      rethrow;
+    }
   }
 
-  Stream<List<Task>> getActiveTasks(String userId, {TaskCategory? category}) {
-    // return empty stream by default
-    return Stream.value(apiClient.get("/api/task") as List<Task>);
+  Stream<List<Task>> getActiveTasks(String userId, {TaskCategory? category}) async* {
+    try {
+      final resp = await _api.get('/api/task');
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        yield <Task>[];
+        return;
+      }
+
+      final decoded = json.decode(resp.body);
+      List<dynamic> list = [];
+      if (decoded is List) {
+        list = decoded;
+      } else if (decoded is Map && decoded['data'] is List) {
+        list = decoded['data'] as List<dynamic>;
+      }
+
+      final tasks = list.map((e) {
+        final map = e is Map<String, dynamic> ? e : Map<String, dynamic>.from(e as Map);
+        return Task.fromJson(map);
+      }).toList();
+
+      yield tasks;
+    } catch (e) {
+      // On error, yield empty list rather than streaming an exception
+      yield <Task>[];
+    }
   }
 
   Future<void> completeTask(Task task) async {
-    final now = DateTime.now();
-    final updatedTask = task.copyWith(
-      isCompleted: true,
-      completedAt: now,
-      isSnoozed: false,
-    );
-    await updateTask(updatedTask);
-    await _addTaskHistory(task.id, task.title, HistoryAction.completed);
+    // mark completed and send update to backend
+    // final updated = task.copyWith(status: TaskStatus.COMPLETED);
+    // await updateTask(updated);
+    // await _addTaskHistory(task.id, task.title, HistoryAction.completed);
   }
 
   Future<void> snoozeTask(Task task, DateTime snoozeUntil) async {
-    final updatedTask = task.copyWith(
-      isSnoozed: true,
-      snoozeUntil: snoozeUntil,
-    );
-    await updateTask(updatedTask);
+    // backend may handle snooze differently; here we attach snooze info in triggerConfig
+    final newConfig = Map<String, dynamic>.from(task.triggerConfig);
+    newConfig['snoozeUntil'] = snoozeUntil.toIso8601String();
+    final updated = task.copyWith(triggerConfig: newConfig);
+    await updateTask(updated);
     await _addTaskHistory(task.id, task.title, HistoryAction.snoozed);
   }
 
   Future<void> _addTaskHistory(String taskId, String taskTitle, HistoryAction action) async {
-    // Firestore integration disabled - no-op for history.
+    // no-op: keep local history disabled
     return Future.value();
   }
 
