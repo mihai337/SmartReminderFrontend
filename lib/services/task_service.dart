@@ -1,36 +1,39 @@
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
 import 'package:smartreminders/models/task.dart';
 import 'package:smartreminders/models/task_history.dart';
 import 'package:smartreminders/services/api_service.dart';
 
 class TaskService {
   /// Use ApiClient (defined in api_service.dart) which performs HTTP requests
-  /// with Firebase token authentication. You can change its base URL there.
   TaskService() : _api = ApiClient();
 
   final ApiClient _api;
 
   Future<void> createTask(Task task) async {
 
-    var testTask = {
-      "title": "Test 10",
-      "description":"This is a location test from flutter app",
-      "status":"PENDING",
-      "profile":"HOME",
-      "trigger":{
-        "type":"LOCATION",
-        "longitude":21.2255,
-        "latitude": 45.7200,
-        "radius": 50.0,
-        "onEnter":true
-      }
-    };
+    // var testTask = {
+    //   "title": "Test 10",
+    //   "description":"This is a location test from flutter app",
+    //   "status":"PENDING",
+    //   "profile":"HOME",
+    //   "trigger":{
+    //     "type":"LOCATION",
+    //     "longitude":21.2255,
+    //     "latitude": 45.7200,
+    //     "radius": 50.0,
+    //     "onEnter":true
+    //   }
+    // };
 
-    
+    if(task.trigger is TimeTrigger){
+      debugPrint((task.trigger as TimeTrigger).time.toString());
+    }
 
     try {
-      final resp = await _api.post('/api/task', testTask);
+      final resp = await _api.post('/api/task', task.toJson());
+      //printToConsole(task.toJson().toString());
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw Exception('Create task failed: ${resp.statusCode} ${resp.body}');
       }
@@ -62,7 +65,7 @@ class TaskService {
     }
   }
 
-  Stream<List<Task>> getActiveTasks(String userId, {TaskCategory? category}) async* {
+  Stream<List<Task>> getActiveTasks(String userId, { TaskProfile? profile}) async* {
     try {
       final resp = await _api.get('/api/task');
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
@@ -97,14 +100,14 @@ class TaskService {
     // await _addTaskHistory(task.id, task.title, HistoryAction.completed);
   }
 
-  Future<void> snoozeTask(Task task, DateTime snoozeUntil) async {
-    // backend may handle snooze differently; here we attach snooze info in triggerConfig
-    final newConfig = Map<String, dynamic>.from(task.triggerConfig);
-    newConfig['snoozeUntil'] = snoozeUntil.toIso8601String();
-    final updated = task.copyWith(triggerConfig: newConfig);
-    await updateTask(updated);
-    await _addTaskHistory(task.id, task.title, HistoryAction.snoozed);
-  }
+  // Future<void> snoozeTask(Task task, DateTime snoozeUntil) async {
+  //   // backend may handle snooze differently; here we attach snooze info in triggerConfig
+  //   final newConfig = Map<String, dynamic>.from(task.triggerConfig);
+  //   newConfig['snoozeUntil'] = snoozeUntil.toIso8601String();
+  //   final updated = task.copyWith(triggerConfig: newConfig);
+  //   await updateTask(updated);
+  //   await _addTaskHistory(task.id, task.title, HistoryAction.snoozed);
+  // }
 
   Future<void> _addTaskHistory(String taskId, String taskTitle, HistoryAction action) async {
     // no-op: keep local history disabled

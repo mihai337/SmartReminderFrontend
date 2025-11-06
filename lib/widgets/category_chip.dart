@@ -2,32 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:smartreminders/models/task.dart';
 
 class CategoryChip extends StatelessWidget {
-  final TaskCategory category;
+  final TaskProfile ? profile;
   final bool isSelected;
   final VoidCallback onSelected;
 
   const CategoryChip({
     super.key,
-    required this.category,
+    required this.profile,
     required this.isSelected,
     required this.onSelected,
   });
 
   IconData _getCategoryIcon() {
-    switch (category) {
-      case TaskCategory.home:
-        return Icons.home;
-      case TaskCategory.work:
-        return Icons.work;
-      case TaskCategory.school:
-        return Icons.school;
-      case TaskCategory.all:
-        return Icons.all_inclusive;
-    }
+    return switch (profile) {
+      null => Icons.all_inclusive,
+      TaskProfile.HOME => Icons.home,
+      TaskProfile.WORK => Icons.work,
+      TaskProfile.SCHOOL => Icons.school,
+    };
   }
 
   String _getCategoryLabel() {
-    return category.name[0].toUpperCase() + category.name.substring(1);
+    if (profile == null) return 'All'; // Handle null for "All"
+    final name = profile!.name;
+    return name[0].toUpperCase() + name.substring(1).toLowerCase();
   }
 
   @override

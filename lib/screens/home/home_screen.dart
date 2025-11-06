@@ -18,7 +18,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final AuthService _authService = AuthService();
   final TaskService _taskService = TaskService();
-  TaskCategory _selectedCategory = TaskCategory.all;
+  TaskProfile? _selectedCategory;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: StreamBuilder<List<Task>>(
                 stream: _taskService.getActiveTasks(
                   userId,
-                  category: _selectedCategory == TaskCategory.all ? null : _selectedCategory,
+                  profile:  _selectedCategory,
                 ),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -56,7 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         onComplete: () => _taskService.completeTask(task),
                         onSnooze: (duration) {
                           final snoozeUntil = DateTime.now().add(duration);
-                          _taskService.snoozeTask(task, snoozeUntil);
+                         // _taskService.snoozeTask(task, snoozeUntil);
                         },
                         onDelete: () => _taskService.deleteTask(task.id),
                       );
@@ -207,13 +207,13 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          _buildCategoryTab(Icons.notifications, TaskCategory.all),
+          _buildCategoryTab(Icons.notifications, null),
           const SizedBox(width: 12),
-          _buildCategoryTab(Icons.home, TaskCategory.home),
+          _buildCategoryTab(Icons.home, TaskProfile.HOME),
           const SizedBox(width: 12),
-          _buildCategoryTab(Icons.work, TaskCategory.work),
+          _buildCategoryTab(Icons.work, TaskProfile.WORK),
           const SizedBox(width: 12),
-          _buildCategoryTab(Icons.school, TaskCategory.school),
+          _buildCategoryTab(Icons.school, TaskProfile.SCHOOL),
           const SizedBox(width: 12),
           _buildCategoryTab(Icons.history, null, isHistory: true),
         ],
@@ -221,8 +221,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCategoryTab(IconData icon, TaskCategory? category, {bool isHistory = false}) {
-    final isSelected = !isHistory && category == _selectedCategory;
+  Widget _buildCategoryTab(IconData icon, TaskProfile? profile, {bool isHistory = false}) {
+    final isSelected = !isHistory && profile == _selectedCategory;
     
     return GestureDetector(
       onTap: () {
@@ -230,8 +230,8 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => const TaskHistoryScreen()),
           );
-        } else if (category != null) {
-          setState(() => _selectedCategory = category);
+        } else {
+          setState(() => _selectedCategory = profile);
         }
       },
       child: Container(

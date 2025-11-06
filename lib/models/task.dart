@@ -1,12 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum TaskCategory { home, work, school, all }
 enum TriggerType { location, time, wifi }
-enum StateChange { enter, exit, connect, disconnect }
 
 // Backend enums from Java
 enum TaskProfile { HOME, WORK, SCHOOL }
 enum TaskStatus { PENDING, COMPLETED, CANCELLED }
+enum StateChange {
+  enter,      // for location
+  exit,       // for location
+  connect,    // for wifi
+  disconnect  // for wifi
+}
+
 
 /// Polymorphic Trigger base class. Backend uses a 'type' discriminator
 /// with names like "TIME" and "LOCATION". We mirror that here.
@@ -14,66 +19,66 @@ abstract class Trigger {
   final int? id;
   final bool triggered;
   final bool onEnter;
+  String get type;
 
   Trigger({this.id, this.triggered = false, this.onEnter = false});
 
-  String get typeName;
-
   Map<String, dynamic> toJson();
 
-  static Trigger? fromJson(Map<String, dynamic>? json) {
-    if (json == null) return null;
+  static Trigger fromJson(Map<String, dynamic>? json) {
+    if (json == null) throw ArgumentError('Trigger data cannot be null');
     final type = json['type'] as String?;
-    if (type == null) return null;
+    if (type == null) throw ArgumentError('Trigger type cannot be null');
+
     switch (type) {
       case 'TIME':
         return TimeTrigger.fromJson(json);
       case 'LOCATION':
         return LocationTrigger.fromJson(json);
       default:
-        return null;
+        throw ArgumentError('Unknown trigger type: $type');
     }
   }
 }
 
 class TimeTrigger extends Trigger {
-  final DateTime? dateTime;
+  final DateTime time;
 
-  TimeTrigger({int? id, bool triggered = false, bool onEnter = false, this.dateTime}) : super(id: id, triggered: triggered, onEnter: onEnter);
+  TimeTrigger({int? id, bool triggered = false, bool onEnter = false, required this.time}) : super(id: id, triggered: triggered, onEnter: onEnter);
 
   @override
-  String get typeName => 'TIME';
+  String get type => 'TIME';
 
   @override
   Map<String, dynamic> toJson() => {
-    'type': typeName,
+    'type': type,
     'id': id,
     'triggered': triggered,
     'onEnter': onEnter,
-    'dateTime': dateTime?.toIso8601String(),
+    'time': time.toUtc().toIso8601String(),
   };
 
   static TimeTrigger fromJson(Map<String, dynamic> json) => TimeTrigger(
     id: json['id'] is int ? json['id'] as int : (json['id'] is num ? (json['id'] as num).toInt() : null),
     triggered: json['triggered'] as bool? ?? false,
     onEnter: json['onEnter'] as bool? ?? false,
-    dateTime: json['dateTime'] != null ? DateTime.parse(json['dateTime'] as String) : null,
+    time: DateTime.parse(json['time'] as String),
   );
 }
 
 class LocationTrigger extends Trigger {
-  final double? latitude;
-  final double? longitude;
-  final double? radius;
+  final double latitude;
+  final double longitude;
+  final double radius;
 
-  LocationTrigger({int? id, bool triggered = false, bool onEnter = false, this.latitude, this.longitude, this.radius}) : super(id: id, triggered: triggered, onEnter: onEnter);
+  LocationTrigger({int? id, bool triggered = false, bool onEnter = false, required this.latitude, required this.longitude, required this.radius}) : super(id: id, triggered: triggered, onEnter: onEnter);
 
   @override
-  String get typeName => 'LOCATION';
+  String get type => 'LOCATION';
 
   @override
   Map<String, dynamic> toJson() => {
-    'type': typeName,
+    'type': type,
     'id': id,
     'triggered': triggered,
     'onEnter': onEnter,
@@ -86,9 +91,9 @@ class LocationTrigger extends Trigger {
     id: json['id'] is int ? json['id'] as int : (json['id'] is num ? (json['id'] as num).toInt() : null),
     triggered: json['triggered'] as bool? ?? false,
     onEnter: json['onEnter'] as bool? ?? false,
-    latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
-    longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
-    radius: json['radius'] != null ? (json['radius'] as num).toDouble() : null,
+    latitude:  (json['latitude'] as num).toDouble() ,
+    longitude:  (json['longitude'] as num).toDouble() ,
+    radius: (json['radius'] as num).toDouble(),
   );
 }
 
@@ -99,40 +104,25 @@ class Task {
 
   // Backend fields
   final TaskStatus status;
-  final TaskProfile? profile;
-  final Trigger? trigger; // polymorphic trigger
-
-  // UI / app fields (kept for backward compatibility)
-  final TaskCategory category;
-  final TriggerType triggerType;
-  final Map<String, dynamic> triggerConfig;
-  final StateChange? stateChange;
+  final TaskProfile profile;
+  final Trigger trigger; // polymorphic trigger
 
   Task({
     required this.id,
     required this.title,
     this.description,
     this.status = TaskStatus.PENDING,
-    this.profile,
-    this.trigger,
-    this.category = TaskCategory.home,
-    this.triggerType = TriggerType.time,
-    this.triggerConfig = const {},
-    this.stateChange,
+    required this.profile,
+    required this.trigger,
   });
 
   Map<String, dynamic> toJson() => {
-    'id': id,
     'title': title,
     'description': description,
     'status': status.name,
-    'profile': profile?.name,
-    'trigger': trigger?.toJson(),
+    'profile': profile.name,
+    'trigger': trigger.toJson(),
     // keep legacy fields for backward compatibility
-    'category': category.name,
-    'triggerType': triggerType.name,
-    'triggerConfig': triggerConfig,
-    'stateChange': stateChange?.name,
   };
 
   factory Task.fromJson(Map<String, dynamic> json) => Task(
@@ -140,12 +130,8 @@ class Task {
     title: json['title'] as String,
     description: json['description'] as String?,
     status: json['status'] != null ? TaskStatus.values.firstWhere((e) => e.name == json['status'], orElse: () => TaskStatus.PENDING) : TaskStatus.PENDING,
-    profile: json['profile'] != null ? TaskProfile.values.firstWhere((e) => e.name == json['profile'], orElse: () => TaskProfile.HOME) : null,
+    profile: TaskProfile.values.firstWhere((e) => e.name == json['profile'], orElse: () => TaskProfile.HOME) ,
     trigger: Trigger.fromJson(json['trigger'] as Map<String, dynamic>?),
-    category: json['category'] != null ? TaskCategory.values.firstWhere((e) => e.name == json['category'], orElse: () => TaskCategory.home) : TaskCategory.home,
-    triggerType: json['triggerType'] != null ? TriggerType.values.firstWhere((e) => e.name == json['triggerType'], orElse: () => TriggerType.time) : TriggerType.time,
-    triggerConfig: json['triggerConfig'] is Map<String, dynamic> ? json['triggerConfig'] as Map<String, dynamic> : <String, dynamic>{},
-    stateChange: json['stateChange'] != null ? StateChange.values.firstWhere((e) => e.name == json['stateChange']) : null,
   );
 
   Task copyWith({
@@ -155,10 +141,7 @@ class Task {
     TaskStatus? status,
     TaskProfile? profile,
     Trigger? trigger,
-    TaskCategory? category,
-    TriggerType? triggerType,
-    Map<String, dynamic>? triggerConfig,
-    StateChange? stateChange,
+
   }) => Task(
     id: id ?? this.id,
     title: title ?? this.title,
@@ -166,9 +149,6 @@ class Task {
     status: status ?? this.status,
     profile: profile ?? this.profile,
     trigger: trigger ?? this.trigger,
-    category: category ?? this.category,
-    triggerType: triggerType ?? this.triggerType,
-    triggerConfig: triggerConfig ?? this.triggerConfig,
-    stateChange: stateChange ?? this.stateChange,
+
   );
 }

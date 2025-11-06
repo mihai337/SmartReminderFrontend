@@ -27,14 +27,16 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   final TaskService _taskService = TaskService();
   final LocationService _locationService = LocationService();
   final WiFiService _wifiService = WiFiService();
-
-  TaskCategory _selectedCategory = TaskCategory.home;
   TaskProfile _selectedProfile = TaskProfile.HOME;
   TriggerType _selectedTriggerType = TriggerType.time;
-  StateChange? _selectedStateChange;
   SavedLocation? _selectedLocation;
   String? _selectedWiFiSSID;
-  DateTime? _selectedDateTime;
+  //late DateTime  _selectedDateTime;
+   late bool _selectedStateChange = true ;
+  DateTime _selectedDateTime = DateTime.now().add(Duration(hours: 1));
+  bool _hasSelectedTime = false;
+   // late Trigger trigger;
+
 
   // UI constants for a richer, smoother look
   final Duration _animDuration = const Duration(milliseconds: 300);
@@ -57,9 +59,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
     final userId = _authService.currentUser?.uid;
     if (userId == null) return;
-
-    Map<String, dynamic> triggerConfig = {};
-    Trigger? trigger;
+    late Trigger trigger;
 
     if (_selectedTriggerType == TriggerType.location) {
       if (_selectedLocation == null) {
@@ -74,27 +74,19 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         latitude: _selectedLocation!.latitude,
         longitude: _selectedLocation!.longitude,
         radius: _selectedLocation!.radiusMeters,
-        onEnter: _selectedStateChange == StateChange.enter,
+        onEnter: _selectedStateChange,
       );
 
-      // Keep a legacy triggerConfig as well.
-      triggerConfig = {
-        'locationId': _selectedLocation!.id,
-        'locationName': _selectedLocation!.name,
-        'latitude': _selectedLocation!.latitude,
-        'longitude': _selectedLocation!.longitude,
-        'radius': _selectedLocation!.radiusMeters,
-      };
-    } else if (_selectedTriggerType == TriggerType.time) {
-      if (_selectedDateTime == null) {
+    }  else if (_selectedTriggerType == TriggerType.time) {
+      if (!_hasSelectedTime) { // ✅ Check this instead
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please select date and time')),
         );
         return;
       }
 
-      trigger = TimeTrigger(dateTime: _selectedDateTime);
-      triggerConfig = {'dateTime': _selectedDateTime!.toIso8601String()};
+      debugPrint('DEBUG: _selectedDateTime = $_selectedDateTime');
+      trigger = TimeTrigger(time: _selectedDateTime);
     } else if (_selectedTriggerType == TriggerType.wifi) {
       if (_selectedWiFiSSID == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -102,21 +94,15 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         );
         return;
       }
-      // Backend doesn't have a WiFi trigger type; include ssid in triggerConfig
-      // and leave polymorphic trigger null so the backend can interpret it as needed.
-      triggerConfig = {'ssid': _selectedWiFiSSID!};
-      trigger = null;
+
     }
 
     final task = Task(
       id: FirebaseFirestore.instance.collection('tasks').doc().id,
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim(),
+      status: TaskStatus.PENDING ,
       profile: _selectedProfile,
-      category: _selectedCategory,
-      triggerType: _selectedTriggerType,
-      triggerConfig: triggerConfig,
-      stateChange: _selectedStateChange,
       trigger: trigger,
     );
 
@@ -290,21 +276,21 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   Widget _buildCategorySelector() {
     return Row(
       children: [
-        _buildCategoryButton(Icons.home, 'Home', TaskCategory.home),
+        _buildCategoryButton(Icons.home, 'Home', TaskProfile.HOME),
         const SizedBox(width: 12),
-        _buildCategoryButton(Icons.work, 'Work', TaskCategory.work),
+        _buildCategoryButton(Icons.work, 'Work', TaskProfile.WORK),
         const SizedBox(width: 12),
-        _buildCategoryButton(Icons.school, 'School', TaskCategory.school),
+        _buildCategoryButton(Icons.school, 'School', TaskProfile.SCHOOL),
       ],
     );
   }
 
-  Widget _buildCategoryButton(IconData icon, String label, TaskCategory category) {
-    final isSelected = _selectedCategory == category;
+  Widget _buildCategoryButton(IconData icon, String label, TaskProfile profile) {
+    final isSelected = _selectedProfile == profile;
 
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _selectedCategory = category),
+        onTap: () => setState(() => _selectedProfile = profile),
         child: AnimatedContainer(
           duration: _animDuration,
           curve: _animCurve,
@@ -390,12 +376,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
   Widget _buildTriggerButton(IconData icon, String label, TriggerType type) {
     final isSelected = _selectedTriggerType == type;
+    //bool _hasSelectedTime = false;
 
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() {
           _selectedTriggerType = type;
-          _selectedStateChange = null;
+          _selectedStateChange = true;
         }),
         child: AnimatedContainer(
           duration: _animDuration,
@@ -476,14 +463,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A)),
         ),
         const SizedBox(height: 8),
-        SegmentedButton<StateChange>(
+        SegmentedButton<bool>(
           segments: const [
-            ButtonSegment(value: StateChange.enter, label: Text('Enter'), icon: Icon(Icons.login)),
-            ButtonSegment(value: StateChange.exit, label: Text('Exit'), icon: Icon(Icons.logout)),
+            ButtonSegment(value: true, label: Text('Enter'), icon: Icon(Icons.login)),
+            ButtonSegment(value: false, label: Text('Exit'), icon: Icon(Icons.logout)),
           ],
-          selected: _selectedStateChange != null ? <StateChange>{_selectedStateChange!} : <StateChange>{},
+          selected: _selectedStateChange != null ? <bool>{_selectedStateChange!} : <bool>{},
           emptySelectionAllowed: true,
-          onSelectionChanged: (set) => setState(() => _selectedStateChange = set.isNotEmpty ? set.first : null),
+          onSelectionChanged: (set) => setState(() => _selectedStateChange = set.isNotEmpty ? set.first! : true),
           showSelectedIcon: true,
         ),
         const SizedBox(height: 16),
@@ -571,6 +558,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     time.hour,
                     time.minute,
                   );
+                  _hasSelectedTime = true; // ✅ Added
                 });
               }
             }
@@ -587,12 +575,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    _selectedDateTime != null
-                        ? '${_selectedDateTime!.toString().split('.')[0]}'
+                    _hasSelectedTime // ✅ Changed from _selectedDateTime != null
+                        ? '${_selectedDateTime.toString().split('.')[0]}' // ✅ Removed !
                         : 'e.g., 9:00 AM, 3:30 PM',
                     style: TextStyle(
                       fontSize: 14,
-                      color: _selectedDateTime != null ? const Color(0xFF1A1A1A) : const Color(0xFF999999),
+                      color: _hasSelectedTime ? const Color(0xFF1A1A1A) : const Color(0xFF999999), // ✅ Changed
                     ),
                   ),
                 ),
@@ -613,14 +601,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A)),
         ),
         const SizedBox(height: 8),
-        SegmentedButton<StateChange>(
-          segments: const [
-            ButtonSegment(value: StateChange.connect, label: Text('Connect'), icon: Icon(Icons.wifi)),
-            ButtonSegment(value: StateChange.disconnect, label: Text('Disconnect'), icon: Icon(Icons.wifi_off)),
-          ],
-          selected: _selectedStateChange != null ? <StateChange>{_selectedStateChange!} : <StateChange>{},
+        SegmentedButton<bool>(
+            segments: const [
+            ButtonSegment(value: true, label: Text('Connect'), icon: Icon(Icons.wifi)),
+            ButtonSegment(value: false, label: Text('Disconnect'), icon: Icon(Icons.wifi_off)),
+            ],
+          selected: _selectedStateChange != null ? <bool>{_selectedStateChange!} : <bool>{},
           emptySelectionAllowed: true,
-          onSelectionChanged: (set) => setState(() => _selectedStateChange = set.isNotEmpty ? set.first : null),
+          onSelectionChanged: (set) => setState(() => _selectedStateChange = set.isNotEmpty ? set.first! : true),
           showSelectedIcon: true,
         ),
         const SizedBox(height: 16),

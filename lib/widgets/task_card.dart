@@ -17,71 +17,52 @@ class TaskCard extends StatelessWidget {
   });
 
   IconData _getTriggerIcon() {
-    switch (task.triggerType) {
-      case TriggerType.location:
-        return Icons.location_on;
-      case TriggerType.time:
-        return Icons.access_time;
-      case TriggerType.wifi:
-        return Icons.wifi;
+    if (task.trigger is TimeTrigger) {
+      return Icons.access_time;
+    } else if (task.trigger is LocationTrigger) {
+      return Icons.location_on;
+    } else {
+      return Icons.wifi;
     }
   }
 
   String _getTriggerText() {
-    switch (task.triggerType) {
-      case TriggerType.location:
-        final locationName = task.triggerConfig['locationName'] ?? 'Location';
-        final stateChange = task.stateChange?.name ?? 'enter';
-        return '$locationName (on $stateChange)';
-      case TriggerType.time:
-        final timestamp = DateTime.tryParse(task.triggerConfig['dateTime'] ?? '');
-        if (timestamp != null) {
-          return DateFormat('h:mm a').format(timestamp);
-        }
-        return 'Time-based';
-      case TriggerType.wifi:
-        final ssid = task.triggerConfig['ssid'] ?? 'WiFi';
-        final stateChange = task.stateChange?.name ?? 'connect';
-        return '$ssid (on $stateChange)';
+    if (task.trigger is TimeTrigger) {
+      final timeTrigger = task.trigger as TimeTrigger;
+      return DateFormat('MMM d, h:mm a').format(timeTrigger.time);
+    } else if (task.trigger is LocationTrigger) {
+      final locationTrigger = task.trigger as LocationTrigger;
+      final action = locationTrigger.onEnter ? 'enter' : 'exit';
+      return 'Location (on $action)';
+    } else {
+      return 'WiFi trigger'; // Handle WiFi if you have it
     }
   }
 
   Color _getCategoryColor() {
-    switch (task.category) {
-      case TaskCategory.home:
+    switch (task.profile) {
+      case TaskProfile.HOME:
         return const Color(0xFF5B7FFF);
-      case TaskCategory.work:
+      case TaskProfile.WORK:
         return const Color(0xFF8B7FFF);
-      case TaskCategory.school:
+      case TaskProfile.SCHOOL:
         return const Color(0xFFFF7F7F);
-      case TaskCategory.all:
-        return const Color(0xFF666666);
     }
   }
 
   String _getCategoryLabel() {
-    switch (task.category) {
-      case TaskCategory.home:
-        return 'home';
-      case TaskCategory.work:
-        return 'work';
-      case TaskCategory.school:
-        return 'school';
-      case TaskCategory.all:
-        return 'all';
-    }
+    return task.profile.name[0].toUpperCase() +
+        task.profile.name.substring(1).toLowerCase();
   }
 
   IconData _getCategoryIcon() {
-    switch (task.category) {
-      case TaskCategory.home:
+    switch (task.profile) {
+      case TaskProfile.HOME:
         return Icons.home;
-      case TaskCategory.work:
+      case TaskProfile.WORK:
         return Icons.work;
-      case TaskCategory.school:
+      case TaskProfile.SCHOOL:
         return Icons.school;
-      case TaskCategory.all:
-        return Icons.all_inclusive;
     }
   }
 
