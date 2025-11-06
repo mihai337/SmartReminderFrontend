@@ -33,7 +33,6 @@ class TaskService {
 
     try {
       final resp = await _api.post('/api/task', task.toJson());
-      //printToConsole(task.toJson().toString());
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw Exception('Create task failed: ${resp.statusCode} ${resp.body}');
       }
@@ -54,7 +53,7 @@ class TaskService {
     }
   }
 
-  Future<void> deleteTask(String taskId) async {
+  Future<void> deleteTask(int taskId) async {
     try {
       final resp = await _api.delete('/api/task/$taskId');
       if (resp.statusCode < 200 || resp.statusCode >= 300) {

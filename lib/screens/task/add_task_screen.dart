@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:smartreminders/models/task.dart';
 import 'package:smartreminders/models/saved_location.dart';
 import 'package:smartreminders/services/auth_service.dart';
@@ -98,7 +97,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     }
 
     final task = Task(
-      id: FirebaseFirestore.instance.collection('tasks').doc().id,
+      // id: FirebaseFirestore.instance.collection('tasks').doc().id,
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim(),
       status: TaskStatus.PENDING ,
@@ -164,12 +163,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           const SizedBox(height: 12),
           _buildCategorySelector(),
           const SizedBox(height: 16),
-          const Text(
-            'Profile',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A)),
-          ),
-          const SizedBox(height: 12),
-          _buildProfileSelector(),
           const SizedBox(height: 24),
           const Text(
             'Remind me when',
@@ -325,41 +318,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     );
   }
 
-  Widget _buildProfileSelector() {
-    return Row(
-      children: [
-        _buildProfileButton('Home', TaskProfile.HOME),
-        const SizedBox(width: 12),
-        _buildProfileButton('Work', TaskProfile.WORK),
-        const SizedBox(width: 12),
-        _buildProfileButton('School', TaskProfile.SCHOOL),
-      ],
-    );
-  }
-
-  Widget _buildProfileButton(String label, TaskProfile profile) {
-    final isSelected = _selectedProfile == profile;
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedProfile = profile),
-        child: AnimatedContainer(
-          duration: _animDuration,
-          curve: _animCurve,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            color: isSelected ? _withOpacity(_primaryColor, 0.12) : Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: isSelected ? _primaryColor : const Color(0xFFE8E8E8), width: isSelected ? 2 : 1),
-          ),
-          child: Center(
-            child: Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isSelected ? _primaryColor : const Color(0xFF666666))),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildTriggerTypeSelector() {
     return Row(
       children: [
@@ -468,9 +426,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             ButtonSegment(value: true, label: Text('Enter'), icon: Icon(Icons.login)),
             ButtonSegment(value: false, label: Text('Exit'), icon: Icon(Icons.logout)),
           ],
-          selected: _selectedStateChange != null ? <bool>{_selectedStateChange!} : <bool>{},
+          selected: <bool>{_selectedStateChange},
           emptySelectionAllowed: true,
-          onSelectionChanged: (set) => setState(() => _selectedStateChange = set.isNotEmpty ? set.first! : true),
+          onSelectionChanged: (set) => setState(() => _selectedStateChange = set.isNotEmpty ? set.first : true),
           showSelectedIcon: true,
         ),
         const SizedBox(height: 16),
@@ -606,9 +564,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             ButtonSegment(value: true, label: Text('Connect'), icon: Icon(Icons.wifi)),
             ButtonSegment(value: false, label: Text('Disconnect'), icon: Icon(Icons.wifi_off)),
             ],
-          selected: _selectedStateChange != null ? <bool>{_selectedStateChange!} : <bool>{},
+          selected: <bool>{_selectedStateChange},
           emptySelectionAllowed: true,
-          onSelectionChanged: (set) => setState(() => _selectedStateChange = set.isNotEmpty ? set.first! : true),
+          onSelectionChanged: (set) => setState(() => _selectedStateChange = set.isNotEmpty ? set.first : true),
           showSelectedIcon: true,
         ),
         const SizedBox(height: 16),

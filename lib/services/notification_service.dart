@@ -82,7 +82,7 @@ class NotificationService {
         '📌 ${task.title}',
         task.description ?? 'Your reminder is ready',
         details,
-        payload: task.id,
+        payload: task.id.toString(),
       );
     } catch (e) {
       print('Failed to show notification: $e');

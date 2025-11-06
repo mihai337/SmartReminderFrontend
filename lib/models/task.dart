@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 enum TriggerType { location, time, wifi }
 
 // Backend enums from Java
@@ -62,7 +60,7 @@ class TimeTrigger extends Trigger {
     id: json['id'] is int ? json['id'] as int : (json['id'] is num ? (json['id'] as num).toInt() : null),
     triggered: json['triggered'] as bool? ?? false,
     onEnter: json['onEnter'] as bool? ?? false,
-    time: DateTime.parse(json['time'] as String),
+    time: DateTime.parse(json['time'] as String).toLocal(),
   );
 }
 
@@ -88,7 +86,7 @@ class LocationTrigger extends Trigger {
   };
 
   static LocationTrigger fromJson(Map<String, dynamic> json) => LocationTrigger(
-    id: json['id'] is int ? json['id'] as int : (json['id'] is num ? (json['id'] as num).toInt() : null),
+    id: json['id'] as int,
     triggered: json['triggered'] as bool? ?? false,
     onEnter: json['onEnter'] as bool? ?? false,
     latitude:  (json['latitude'] as num).toDouble() ,
@@ -98,7 +96,7 @@ class LocationTrigger extends Trigger {
 }
 
 class Task {
-  final String id;
+  final int? id;
   final String title;
   final String? description;
 
@@ -108,7 +106,7 @@ class Task {
   final Trigger trigger; // polymorphic trigger
 
   Task({
-    required this.id,
+    this.id,
     required this.title,
     this.description,
     this.status = TaskStatus.PENDING,
@@ -126,7 +124,7 @@ class Task {
   };
 
   factory Task.fromJson(Map<String, dynamic> json) => Task(
-    id: json['id'] as String,
+    id: json['id'] as int,
     title: json['title'] as String,
     description: json['description'] as String?,
     status: json['status'] != null ? TaskStatus.values.firstWhere((e) => e.name == json['status'], orElse: () => TaskStatus.PENDING) : TaskStatus.PENDING,
@@ -135,7 +133,7 @@ class Task {
   );
 
   Task copyWith({
-    String? id,
+    int? id,
     String? title,
     String? description,
     TaskStatus? status,

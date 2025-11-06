@@ -58,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           final snoozeUntil = DateTime.now().add(duration);
                          // _taskService.snoozeTask(task, snoozeUntil);
                         },
-                        onDelete: () => _taskService.deleteTask(task.id),
+                        onDelete: () => _taskService.deleteTask(task.id!),
                       );
                     },
                   );
