@@ -30,12 +30,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   TriggerType _selectedTriggerType = TriggerType.time;
   SavedLocation? _selectedLocation;
   String? _selectedWiFiSSID;
-  //late DateTime  _selectedDateTime;
-   late bool _selectedStateChange = true ;
+  late bool _selectedStateChange = true ;
   DateTime _selectedDateTime = DateTime.now().add(Duration(hours: 1));
   bool _hasSelectedTime = false;
-   // late Trigger trigger;
-
 
   // UI constants for a richer, smoother look
   final Duration _animDuration = const Duration(milliseconds: 300);
@@ -97,7 +94,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     }
 
     final task = Task(
-      // id: FirebaseFirestore.instance.collection('tasks').doc().id,
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim(),
       status: TaskStatus.PENDING ,

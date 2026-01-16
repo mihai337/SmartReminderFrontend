@@ -35,14 +35,15 @@ class BackgroundService {
     }
   }
 
-  static Future<void> registerPeriodicTask() async {
+  static Future<void> registerPeriodicTask({int frequencyMinutes = 15}) async {
     if (kIsWeb) return;
     try {
       await Workmanager().registerPeriodicTask(
         'task_checker',
         'checkTaskTriggers',
-        frequency: const Duration(minutes: 15),
+        frequency: Duration(minutes: frequencyMinutes),
         constraints: Constraints(
+          // TODO: check is network is required
           networkType: NetworkType.notRequired,
         ),
       );

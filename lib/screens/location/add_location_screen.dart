@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:smartreminders/models/saved_location.dart';
-import 'package:smartreminders/services/auth_service.dart';
 import 'package:smartreminders/services/location_service.dart';
 
 class AddLocationScreen extends StatefulWidget {

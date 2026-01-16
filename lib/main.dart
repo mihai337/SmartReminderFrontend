@@ -20,7 +20,7 @@ void main() async {
     );
     await Firebase.initializeApp(options: options);
   } catch (e) {
-    print('Firebase initialization error: $e');
+    debugPrint('Firebase initialization error: $e');
   }
   
   await NotificationService().initialize();

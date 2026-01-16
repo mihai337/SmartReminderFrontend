@@ -1,11 +1,10 @@
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint, kDebugMode;
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:smartreminders/models/task.dart';
 import 'dart:io' show Platform;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
-
 
 
 class NotificationService {
@@ -110,7 +109,6 @@ class NotificationService {
     if (task.trigger is! TimeTrigger) return;
 
     final due = (task.trigger as TimeTrigger).time;
-    debugPrint('Got here 1');
 
     bool isExactAlarmPermitted = true;
     if (Platform.isAndroid) {
@@ -119,13 +117,16 @@ class NotificationService {
       isExactAlarmPermitted = await androidPlugin?.canScheduleExactNotifications() ?? false;
     }
 
-    // Do not schedule in the past
     if (due.isBefore(DateTime.now().toLocal())) return;
 
-    debugPrint('Got here 2');
-
     // on emulator tz.local is 2 hours behind
-    final scheduled = tz.TZDateTime.from(due, tz.local);
+    tz.TZDateTime scheduled;
+    if(kDebugMode){
+      scheduled = tz.TZDateTime.from(due, tz.getLocation('Europe/Bucharest'));
+    }
+    else{
+      scheduled = tz.TZDateTime.from(due, tz.local);
+    }
 
     const androidDetails = AndroidNotificationDetails(
       'task_reminders',
@@ -133,6 +134,10 @@ class NotificationService {
       channelDescription: 'Notifications for task reminders',
       importance: Importance.high,
       priority: Priority.high,
+      actions: [
+        AndroidNotificationAction('complete', 'Complete'),
+        AndroidNotificationAction('snooze', 'Snooze'),
+      ],
     );
 
     const iosDetails = DarwinNotificationDetails(
@@ -146,40 +151,26 @@ class NotificationService {
       iOS: iosDetails,
     );
 
+    // generate a unique notification id
+    final int notificationId = scheduled.millisecondsSinceEpoch & 0x7FFFFFFF;
+
     try {
-      // Try exact alarm (best accuracy)
-      debugPrint('Got here 3');
-      debugPrint('$scheduled');
+      debugPrint('mihai: ''$scheduled');
       await _notifications.zonedSchedule(
-        task.id.hashCode,
+        notificationId,
         '📌 ${task.title}',
         task.description ?? 'Your reminder is ready',
         scheduled,
         details,
-        payload: task.id.toString(),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        payload: null,
+        androidScheduleMode: isExactAlarmPermitted ? AndroidScheduleMode.exactAllowWhileIdle : AndroidScheduleMode.inexactAllowWhileIdle,
       );
-      debugPrint('Got here 4');
     } on PlatformException catch (e) {
-      debugPrint('Got here 5');
       if (e.code == 'exact_alarms_not_permitted') {
-        // Fallback when exact alarms are not allowed
         debugPrint('Exact alarms not permitted, scheduling inexact alarm');
-        await _notifications.zonedSchedule(
-          task.id.hashCode,
-          '📌 ${task.title}',
-          task.description ?? 'Your reminder is ready',
-          scheduled,
-          details,
-          payload: task.id.toString(),
-          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        );
-        debugPrint('Got here 6');
       } else {
         rethrow;
       }
     }
   }
-
-
 }

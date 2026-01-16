@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/cupertino.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:smartreminders/models/saved_location.dart';
 import 'package:smartreminders/services/api_service.dart';
@@ -40,6 +39,7 @@ class LocationService {
     _api.post("/api/user/location",  requestBody);
   }
 
+  //TODO: Implement deleteLocation
   Future<void> deleteLocation(String locationId) async {
 
   }
@@ -62,7 +62,6 @@ class LocationService {
         throw Exception('Failed to load locations: ${resp.statusCode}');
       }
     } catch (error) {
-      // This will send an error event on the stream
       throw Exception('Error fetching locations: $error');
     }
   }

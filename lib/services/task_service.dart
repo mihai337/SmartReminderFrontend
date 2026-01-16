@@ -7,7 +7,6 @@ import 'package:smartreminders/services/api_service.dart';
 import 'package:smartreminders/services/notification_service.dart';
 
 class TaskService {
-  /// Use ApiClient (defined in api_service.dart) which performs HTTP requests
   TaskService() : _api = ApiClient(),
         _notificationService = NotificationService();
 
@@ -15,8 +14,6 @@ class TaskService {
   final NotificationService _notificationService;
 
   Future<void> createTask(Task task) async {
-
-
     try {
       final resp = await _api.post('/api/task', task.toJson());
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
@@ -93,16 +90,8 @@ class TaskService {
   }
 
   Future<void> completeTask(Task task) async {
-    // log a check message
-    //debugPrint('Task completed: ${task.title}');
-    _notificationService.showTaskNotification(task);
-    //await _notificationService.cancelNotification(task.id!.hashCode);
-
-
-    // mark completed and send update to backend
     final updated = task.copyWith(status: TaskStatus.COMPLETED);
     await updateTask(updated);
-    await _addTaskHistory(task.id!, task.title, HistoryAction.completed);
   }
 
   // Future<void> snoozeTask(Task task, DateTime snoozeUntil) async {
@@ -113,21 +102,6 @@ class TaskService {
   //   await updateTask(updated);
   //   await _addTaskHistory(task.id, task.title, HistoryAction.snoozed);
   // }
-
-  Future<void> _addTaskHistory(int taskId, String taskTitle, HistoryAction action) async {
-    // no-op: keep local history disabled
-    return Future.value();
-  }
-  // TaskHistory({
-  //   required this.id,
-  //   required this.taskId,
-  //   required this.userId,
-  //   required this.taskTitle,
-  //   required this.action,
-  //   required this.timestamp,
-  // });
-
-
 
   Stream<List<TaskHistory>> getTaskHistory() async* {
     try {
@@ -154,16 +128,8 @@ class TaskService {
 
       yield history;
     } catch (e) {
-      // On error, yield empty list rather than streaming an exception
       yield <TaskHistory>[];
     }
-    // var task = TaskHistory(
-    //   taskId: '101',
-    //   taskTitle: 'Sample Task',
-    //   action: HistoryAction.completed,
-    //   timestamp: DateTime.now(),
-    // );
-    // yield [task];
   }
 
 }

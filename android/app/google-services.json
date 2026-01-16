@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "482369567349",
+    "project_id": "smartreminder-9ccc3",
+    "storage_bucket": "smartreminder-9ccc3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:482369567349:android:68eb2b7843c79b2d2b963c",
+        "android_client_info": {
+          "package_name": "com.MSA.SmartReminderApp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "482369567349-6k0sqe15vugee8gcbbvj2kk66lme4drs.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.MSA.SmartReminderApp",
+            "certificate_hash": "6343bf368c3709a89de15ca62b32cadb9fb1b48e"
+          }
+        },
+        {
+          "client_id": "482369567349-36h12ciol4s5bhqdn9hcbohcmc8kdf6j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA30Dt0S_SwRtkuBq2PWPqBiCIVfbUZGVs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "482369567349-36h12ciol4s5bhqdn9hcbohcmc8kdf6j.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

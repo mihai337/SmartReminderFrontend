@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:smartreminders/services/auth_service.dart';
 import 'package:smartreminders/screens/home/home_screen.dart';
 
@@ -16,13 +17,13 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
     
-    final user = await _authService.loginWithGoogle();
+    final bool user = await _authService.loginWithGoogle();
     
     if (!mounted) return;
     
     setState(() => _isLoading = false);
     
-    if (user != null) {
+    if (user) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const HomeScreen()),
       );
@@ -107,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: double.infinity,
                               child: OutlinedButton.icon(
                                 onPressed: _signInWithGoogle,
-                                icon: Image.network(
+                                icon: SvgPicture.network(
                                   'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
                                   width: 24,
                                   height: 24,

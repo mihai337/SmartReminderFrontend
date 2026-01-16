@@ -7,6 +7,7 @@ import 'package:smartreminders/models/task.dart';
 import 'package:smartreminders/services/api_service.dart';
 import 'package:smartreminders/services/location_service.dart';
 
+// TODO: try to use background_service.dart for location polling and task checking
 class LocationTaskWatcher {
   LocationTaskWatcher()
       : _api = ApiClient(),
@@ -27,14 +28,11 @@ class LocationTaskWatcher {
   }) async {
     _timer?.cancel();
 
-    // Ask permission once
     final allowed = await _locationService.requestPermission();
     if (!allowed) return;
 
-    // Run immediately
     await _tick(onCheck);
 
-    // Then every 2 minutes
     _timer = Timer.periodic(
       const Duration(minutes: 2),
           (_) => _tick(onCheck),
@@ -53,6 +51,7 @@ class LocationTaskWatcher {
     final position = await _locationService.getCurrentLocation();
     if (position == null) return;
 
+    // TODO: call API only when changes are made, or cache tasks locally
     final resp = await _api.get('/api/task');
     if (resp.statusCode < 200 || resp.statusCode >= 300) return;
 

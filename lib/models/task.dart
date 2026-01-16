@@ -1,6 +1,6 @@
 enum TriggerType { location, time, wifi }
 
-// Backend enums from Java
+// Backend enums from backend
 enum TaskProfile { HOME, WORK, SCHOOL }
 enum TaskStatus { PENDING, COMPLETED, CANCELLED }
 enum StateChange {
@@ -9,7 +9,6 @@ enum StateChange {
   connect,    // for wifi
   disconnect  // for wifi
 }
-
 
 /// Polymorphic Trigger base class. Backend uses a 'type' discriminator
 /// with names like "TIME" and "LOCATION". We mirror that here.
@@ -103,7 +102,7 @@ class Task {
   // Backend fields
   final TaskStatus status;
   final TaskProfile profile;
-  final Trigger trigger; // polymorphic trigger
+  final Trigger trigger;
 
   Task({
     this.id,
