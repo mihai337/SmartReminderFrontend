@@ -72,12 +72,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       trigger = LocationTrigger(
         latitude: _selectedLocation!.latitude,
         longitude: _selectedLocation!.longitude,
-        radius: _selectedLocation!.radiusMeters,
+        radius: _selectedLocation!.radius,
         onEnter: _selectedStateChange,
       );
 
     }  else if (_selectedTriggerType == TriggerType.time) {
-      if (!_hasSelectedTime) { // ✅ Check this instead
+      if (!_hasSelectedTime) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please select date and time')),
         );
@@ -411,8 +411,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   Widget _buildLocationConfig() {
-    final userId = _authService.currentUser?.uid ?? '';
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -438,7 +436,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         ),
         const SizedBox(height: 12),
         StreamBuilder<List<SavedLocation>>(
-          stream: _locationService.getSavedLocations(userId),
+          stream: _locationService.getSavedLocations(),
           builder: (context, snapshot) {
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
               return Container(
@@ -472,7 +470,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   child: ListTile(
                     leading: Icon(Icons.place, color: isSelected ? _primaryColor : const Color(0xFF666666)),
                     title: Text(location.name),
-                    subtitle: Text('${location.radiusMeters.toInt()}m radius'),
+                    subtitle: Text('${location.radius.toInt()}m radius'),
                     trailing: isSelected ? Icon(Icons.check_circle, color: _primaryColor) : null,
                     onTap: () => setState(() => _selectedLocation = location),
                   ),
@@ -534,7 +532,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 Expanded(
                   child: Text(
                     _hasSelectedTime // ✅ Changed from _selectedDateTime != null
-                        ? '${_selectedDateTime.toString().split('.')[0]}' // ✅ Removed !
+                        ? _selectedDateTime.toString().split('.')[0] // ✅ Removed !
                         : 'e.g., 9:00 AM, 3:30 PM',
                     style: TextStyle(
                       fontSize: 14,

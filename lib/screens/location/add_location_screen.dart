@@ -14,12 +14,13 @@ class AddLocationScreen extends StatefulWidget {
 
 class _AddLocationScreenState extends State<AddLocationScreen> {
   final _nameController = TextEditingController();
-  final AuthService _authService = AuthService();
   final LocationService _locationService = LocationService();
   
   GoogleMapController? _mapController;
   LatLng _selectedPosition = const LatLng(37.7749, -122.4194); // San Francisco default
   double _radiusMeters = 100.0;
+  bool _hasLocationPermission = false;
+
   bool _isLoading = true;
 
   @override
@@ -30,6 +31,10 @@ class _AddLocationScreenState extends State<AddLocationScreen> {
 
   Future<void> _initializeLocation() async {
     final hasPermission = await _locationService.requestPermission();
+
+    if (!mounted) return;
+    setState(() => _hasLocationPermission = hasPermission);
+
     if (hasPermission) {
       final position = await _locationService.getCurrentLocation();
       if (position != null && mounted) {
@@ -40,11 +45,14 @@ class _AddLocationScreenState extends State<AddLocationScreen> {
         _mapController?.animateCamera(
           CameraUpdate.newLatLngZoom(_selectedPosition, 15),
         );
+      } else {
+        setState(() => _isLoading = false);
       }
     } else {
       setState(() => _isLoading = false);
     }
   }
+
 
   Future<void> _saveLocation() async {
     if (_nameController.text.trim().isEmpty) {
@@ -54,19 +62,11 @@ class _AddLocationScreenState extends State<AddLocationScreen> {
       return;
     }
 
-    final userId = _authService.currentUser?.uid;
-    if (userId == null) return;
-
-    final now = DateTime.now();
     final location = SavedLocation(
-      id: FirebaseFirestore.instance.collection('locations').doc().id,
-      userId: userId,
       name: _nameController.text.trim(),
       latitude: _selectedPosition.latitude,
       longitude: _selectedPosition.longitude,
-      radiusMeters: _radiusMeters,
-      createdAt: now,
-      updatedAt: now,
+      radius: _radiusMeters,
     );
 
     await _locationService.saveLocation(location);
@@ -118,6 +118,9 @@ class _AddLocationScreenState extends State<AddLocationScreen> {
                         ),
                         onMapCreated: (controller) => _mapController = controller,
                         onTap: (position) => setState(() => _selectedPosition = position),
+                        myLocationEnabled: _hasLocationPermission,
+                        myLocationButtonEnabled: _hasLocationPermission,
+
                         circles: {
                           Circle(
                             circleId: const CircleId('geofence'),

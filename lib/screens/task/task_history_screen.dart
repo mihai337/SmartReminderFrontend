@@ -18,7 +18,7 @@ class TaskHistoryScreen extends StatelessWidget {
         title: const Text('Task History'),
       ),
       body: StreamBuilder<List<TaskHistory>>(
-        stream: taskService.getTaskHistory(userId),
+        stream: taskService.getTaskHistory(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

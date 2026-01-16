@@ -11,7 +11,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
+
     <application
         android:label="dreamflow"
         android:name="${applicationName}"
@@ -45,7 +47,7 @@
             android:value="2" />
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_API_KEY_HERE"/>
+            android:value="AIzaSyDlwTvNHpgedb_zD8EzY4MbB-j06U-WzzA"/>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

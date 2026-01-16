@@ -11,6 +11,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   try {
+    // TODO: Store Firebase config securely
     FirebaseOptions options = const FirebaseOptions(
       apiKey: "AIzaSyBSqwhR1UbNxDVJr9uDfjW7bTjDT6xmP5o",
       appId: "1:482369567349:web:3d99d42764e0504f2b963c",

@@ -1,9 +1,16 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/cupertino.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:smartreminders/models/saved_location.dart';
+import 'package:smartreminders/services/api_service.dart';
+
 
 class LocationService {
-  // final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  LocationService() : _api = ApiClient();
 
+  final ApiClient _api;
   Future<bool> requestPermission() async {
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
@@ -24,17 +31,40 @@ class LocationService {
   }
 
   Future<void> saveLocation(SavedLocation location) async {
-    // await _firestore.collection('locations').doc(location.id).set(location.toJson());
+    var requestBody = {
+      'name': location.name,
+      'latitude': location.latitude,
+      'longitude': location.longitude,
+      'radius': location.radius,
+    };
+    _api.post("/api/user/location",  requestBody);
   }
 
   Future<void> deleteLocation(String locationId) async {
-    // await _firestore.collection('locations').doc(locationId).delete();
+
   }
 
-  Stream<List<SavedLocation>> getSavedLocations(String userId) {
-    // Firestore integration is currently disabled for this build.
-    // Return an empty stream so the UI can handle "no locations" gracefully.
-    return Stream.value(<SavedLocation>[]);
+  Stream<List<SavedLocation>> getSavedLocations() async* {
+    try {
+      final resp = await _api.get('/api/user/location');
+
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        final decoded = json.decode(resp.body);
+
+        if (decoded is List) {
+          final locations =
+              decoded.map<SavedLocation>((e) => SavedLocation.fromJson(e)).toList();
+          yield locations;
+        } else {
+          yield <SavedLocation>[];
+        }
+      } else {
+        throw Exception('Failed to load locations: ${resp.statusCode}');
+      }
+    } catch (error) {
+      // This will send an error event on the stream
+      throw Exception('Error fetching locations: $error');
+    }
   }
 
   bool isInGeofence(double currentLat, double currentLng, SavedLocation location) {
@@ -44,7 +74,7 @@ class LocationService {
       location.latitude,
       location.longitude,
     );
-    return distance <= location.radiusMeters;
+    return distance <= location.radius;
   }
 
   double calculateDistance(double lat1, double lng1, double lat2, double lng2) {

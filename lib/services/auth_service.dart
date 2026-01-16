@@ -23,6 +23,7 @@ class AuthService {
       } else {
         // For mobile, use redirect which will be handled by the OS
 
+        // TODO: Implement proper Google Sign-In flow for mobile platforms
         userCredential = await _firebaseAuth.signInWithEmailAndPassword(email: "test@gmail.com", password: "asdasd");
       }
 

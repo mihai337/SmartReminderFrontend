@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:smartreminders/models/task.dart';
 import 'package:intl/intl.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+
 
 class TaskCard extends StatelessWidget {
   final Task task;
@@ -79,15 +82,19 @@ class TaskCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 24,
-            height: 24,
-            margin: const EdgeInsets.only(top: 4),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFCCCCCC), width: 2),
+          GestureDetector(
+            onTap: onComplete,
+            child: Container(
+              width: 24,
+              height: 24,
+              margin: const EdgeInsets.only(top: 4),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFCCCCCC), width: 2),
+              ),
             ),
           ),
+
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -152,13 +159,13 @@ class TaskCard extends StatelessWidget {
                         style: const TextStyle(fontSize: 14, color: Color(0xFF5B7FFF)),
                       ),
                     ),
-                    TextButton(
-                      onPressed: onComplete,
-                      child: const Text(
-                        'Test',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF5B7FFF)),
-                      ),
-                    ),
+                    // TextButton(
+                    //   onPressed: onComplete,
+                    //   child: const Text(
+                    //     'Test',
+                    //     style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF5B7FFF)),
+                    //   ),
+                    // ),
                   ],
                 ),
                 if (true) ...[

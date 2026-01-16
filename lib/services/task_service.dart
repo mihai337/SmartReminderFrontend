@@ -4,37 +4,31 @@ import 'package:flutter/cupertino.dart';
 import 'package:smartreminders/models/task.dart';
 import 'package:smartreminders/models/task_history.dart';
 import 'package:smartreminders/services/api_service.dart';
+import 'package:smartreminders/services/notification_service.dart';
 
 class TaskService {
   /// Use ApiClient (defined in api_service.dart) which performs HTTP requests
-  TaskService() : _api = ApiClient();
+  TaskService() : _api = ApiClient(),
+        _notificationService = NotificationService();
 
   final ApiClient _api;
+  final NotificationService _notificationService;
 
   Future<void> createTask(Task task) async {
 
-    // var testTask = {
-    //   "title": "Test 10",
-    //   "description":"This is a location test from flutter app",
-    //   "status":"PENDING",
-    //   "profile":"HOME",
-    //   "trigger":{
-    //     "type":"LOCATION",
-    //     "longitude":21.2255,
-    //     "latitude": 45.7200,
-    //     "radius": 50.0,
-    //     "onEnter":true
-    //   }
-    // };
-
-    if(task.trigger is TimeTrigger){
-      debugPrint((task.trigger as TimeTrigger).time.toString());
-    }
 
     try {
       final resp = await _api.post('/api/task', task.toJson());
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw Exception('Create task failed: ${resp.statusCode} ${resp.body}');
+      }
+      if(task.trigger is TimeTrigger){
+        debugPrint((task.trigger as TimeTrigger).time.toString());
+        final due = (task.trigger as TimeTrigger).time;
+        if (due.isAfter(DateTime.now().toLocal())) {
+          await _notificationService.scheduleTaskAtDueTime(task);
+
+        }
       }
     } catch (e) {
       rethrow;
@@ -85,6 +79,12 @@ class TaskService {
         return Task.fromJson(map);
       }).toList();
 
+      if(profile != null){
+        final filtered = tasks.where((task) => task.profile == profile).toList();
+        yield filtered;
+        return;
+      }
+
       yield tasks;
     } catch (e) {
       // On error, yield empty list rather than streaming an exception
@@ -93,10 +93,16 @@ class TaskService {
   }
 
   Future<void> completeTask(Task task) async {
+    // log a check message
+    //debugPrint('Task completed: ${task.title}');
+    _notificationService.showTaskNotification(task);
+    //await _notificationService.cancelNotification(task.id!.hashCode);
+
+
     // mark completed and send update to backend
-    // final updated = task.copyWith(status: TaskStatus.COMPLETED);
-    // await updateTask(updated);
-    // await _addTaskHistory(task.id, task.title, HistoryAction.completed);
+    final updated = task.copyWith(status: TaskStatus.COMPLETED);
+    await updateTask(updated);
+    await _addTaskHistory(task.id!, task.title, HistoryAction.completed);
   }
 
   // Future<void> snoozeTask(Task task, DateTime snoozeUntil) async {
@@ -108,12 +114,56 @@ class TaskService {
   //   await _addTaskHistory(task.id, task.title, HistoryAction.snoozed);
   // }
 
-  Future<void> _addTaskHistory(String taskId, String taskTitle, HistoryAction action) async {
+  Future<void> _addTaskHistory(int taskId, String taskTitle, HistoryAction action) async {
     // no-op: keep local history disabled
     return Future.value();
   }
+  // TaskHistory({
+  //   required this.id,
+  //   required this.taskId,
+  //   required this.userId,
+  //   required this.taskTitle,
+  //   required this.action,
+  //   required this.timestamp,
+  // });
 
-  Stream<List<TaskHistory>> getTaskHistory(String userId) {
-    return Stream.value(<TaskHistory>[]);
+
+
+  Stream<List<TaskHistory>> getTaskHistory() async* {
+    try {
+      final resp = await _api.get('/api/task/history');
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        yield <TaskHistory>[];
+        return;
+      }
+
+      final decoded = json.decode(resp.body);
+      List<dynamic> list = [];
+      if (decoded is List) {
+        list = decoded;
+      } else if (decoded is Map && decoded['data'] is List) {
+        list = decoded['data'] as List<dynamic>;
+      }
+
+      final history = list.map((e) {
+        // TODO : fix timestamp
+        var task = TaskHistory(taskId: e["id"], taskTitle: e["title"], action: HistoryAction.completed, timestamp: DateTime.now());
+        return task;
+      }).toList();
+
+
+      yield history;
+    } catch (e) {
+      // On error, yield empty list rather than streaming an exception
+      yield <TaskHistory>[];
+    }
+    // var task = TaskHistory(
+    //   taskId: '101',
+    //   taskTitle: 'Sample Task',
+    //   action: HistoryAction.completed,
+    //   timestamp: DateTime.now(),
+    // );
+    // yield [task];
   }
+
 }

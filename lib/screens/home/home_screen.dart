@@ -222,7 +222,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCategoryTab(IconData icon, TaskProfile? profile, {bool isHistory = false}) {
-    final isSelected = !isHistory && profile == _selectedCategory;
+    final isSelected = !isHistory &&
+        ((profile == null && _selectedCategory == null) ||
+            (profile != null && profile == _selectedCategory));
     
     return GestureDetector(
       onTap: () {
