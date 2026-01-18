@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:smartreminders/services/auth_service.dart';
 import 'package:smartreminders/services/task_service.dart';
 import 'package:smartreminders/models/task_history.dart';
 import 'package:intl/intl.dart';
@@ -9,9 +8,7 @@ class TaskHistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authService = AuthService();
     final taskService = TaskService();
-    final userId = authService.currentUser?.uid ?? '';
 
     return Scaffold(
       appBar: AppBar(

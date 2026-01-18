@@ -5,10 +5,14 @@ import 'package:smartreminders/env/config.dart';
 
 class ApiClient {
 
-  final String baseUrl = Config.env.apiBaseUrl;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final String baseUrl;
+  final FirebaseAuth _auth;
 
-  ApiClient();
+  static final ApiClient _instance = ApiClient.internal();
+  factory ApiClient() => _instance;
+  ApiClient.internal()
+      : baseUrl = Config.env.apiBaseUrl,
+        _auth = FirebaseAuth.instance;
 
   /// Get the Firebase ID token for the current user
   Future<String?> _getToken() async {

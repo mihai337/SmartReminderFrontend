@@ -2,8 +2,14 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 
 class WiFiService {
-  final Connectivity _connectivity = Connectivity();
-  final NetworkInfo _networkInfo = NetworkInfo();
+  final Connectivity _connectivity;
+  final NetworkInfo _networkInfo;
+
+  static final WiFiService _instance = WiFiService._internal();
+  factory WiFiService() => _instance;
+  WiFiService._internal()
+      : _connectivity = Connectivity(),
+        _networkInfo = NetworkInfo();
 
   Future<String?> getCurrentWiFiSSID() async {
     final connectivityResult = await _connectivity.checkConnectivity();
@@ -22,8 +28,6 @@ class WiFiService {
   }
 
   Future<List<String>> getKnownNetworks() async {
-    // Note: Getting list of known networks is not directly supported on all platforms
-    // This is a placeholder that returns the current network if connected
     final currentSSID = await getCurrentWiFiSSID();
     if (currentSSID != null) {
       return [currentSSID.replaceAll('"', '')];

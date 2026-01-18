@@ -28,7 +28,7 @@ class _AddLocationScreenState extends State<AddLocationScreen> {
   }
 
   Future<void> _initializeLocation() async {
-    final hasPermission = await _locationService.requestPermission();
+    final hasPermission = await LocationService.requestPermission();
 
     if (!mounted) return;
     setState(() => _hasLocationPermission = hasPermission);

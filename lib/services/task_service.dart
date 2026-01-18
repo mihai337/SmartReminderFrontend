@@ -1,17 +1,23 @@
+import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/cupertino.dart';
+import 'package:rxdart/rxdart.dart';
+import 'package:smartreminders/models/observer.dart';
 import 'package:smartreminders/models/task.dart';
 import 'package:smartreminders/models/task_history.dart';
 import 'package:smartreminders/services/api_service.dart';
-import 'package:smartreminders/services/notification_service.dart';
 
-class TaskService {
-  TaskService() : _api = ApiClient(),
-        _notificationService = NotificationService();
+class TaskService implements TaskObservable {
+
+  TaskService.internal() : _api = ApiClient(), _observers = [];
+  static final TaskService _instance = TaskService.internal();
+  factory TaskService() => _instance;
 
   final ApiClient _api;
-  final NotificationService _notificationService;
+  final List<TaskObserver> _observers;
+  final _controller = BehaviorSubject<List<Task>>();
+
+  Stream<List<Task>> get taskStream => _controller.stream;
 
   Future<void> createTask(Task task) async {
     try {
@@ -19,14 +25,7 @@ class TaskService {
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw Exception('Create task failed: ${resp.statusCode} ${resp.body}');
       }
-      if(task.trigger is TimeTrigger){
-        debugPrint((task.trigger as TimeTrigger).time.toString());
-        final due = (task.trigger as TimeTrigger).time;
-        if (due.isAfter(DateTime.now().toLocal())) {
-          await _notificationService.scheduleTaskAtDueTime(task);
-
-        }
-      }
+      notifyObservers();
     } catch (e) {
       rethrow;
     }
@@ -39,6 +38,7 @@ class TaskService {
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw Exception('Update task failed: ${resp.statusCode} ${resp.body}');
       }
+      notifyObservers();
     } catch (e) {
       rethrow;
     }
@@ -50,16 +50,17 @@ class TaskService {
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw Exception('Delete task failed: ${resp.statusCode} ${resp.body}');
       }
+      notifyObservers();
     } catch (e) {
       rethrow;
     }
   }
 
-  Stream<List<Task>> getActiveTasks(String userId, { TaskProfile? profile}) async* {
+  Future<void> loadTasks({ TaskProfile? profile}) async {
     try {
       final resp = await _api.get('/api/task');
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
-        yield <Task>[];
+        _controller.add(<Task>[]);
         return;
       }
 
@@ -78,14 +79,14 @@ class TaskService {
 
       if(profile != null){
         final filtered = tasks.where((task) => task.profile == profile).toList();
-        yield filtered;
+        _controller.add(filtered);
         return;
       }
 
-      yield tasks;
+      _controller.add(tasks);
     } catch (e) {
-      // On error, yield empty list rather than streaming an exception
-      yield <Task>[];
+      // On error, stream empty list rather than streaming an exception
+      _controller.add(<Task>[]);
     }
   }
 
@@ -132,4 +133,20 @@ class TaskService {
     }
   }
 
+  @override
+  void registerObserver(TaskObserver observer) {
+    _observers.add(observer);
+  }
+
+  @override
+  void removeObserver(TaskObserver observer) {
+    _observers.remove(observer);
+  }
+
+  @override
+  void notifyObservers() {
+    for (var observer in _observers) {
+      observer.update();
+    }
+  }
 }

@@ -3,6 +3,8 @@ import 'package:flutter_svg/svg.dart';
 import 'package:smartreminders/services/auth_service.dart';
 import 'package:smartreminders/screens/home/home_screen.dart';
 
+import '../../services/task_service.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -12,6 +14,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final AuthService _authService = AuthService();
+  final TaskService _taskService = TaskService();
   bool _isLoading = false;
 
   Future<void> _signInWithGoogle() async {
@@ -24,6 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
     
     if (user) {
+      _taskService.loadTasks();
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const HomeScreen()),
       );

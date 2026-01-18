@@ -7,10 +7,13 @@ import 'package:smartreminders/services/api_service.dart';
 
 
 class LocationService {
-  LocationService() : _api = ApiClient();
+  static final LocationService _instance = LocationService.internal();
+  factory LocationService() => _instance;
+  LocationService.internal(): _api = ApiClient();
 
   final ApiClient _api;
-  Future<bool> requestPermission() async {
+
+  static Future<bool> requestPermission() async {
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -64,13 +67,5 @@ class LocationService {
     } catch (error) {
       throw Exception('Error fetching locations: $error');
     }
-  }
-
-  bool isInGeofence(double currentLat, double currentLng, SavedLocation location) {
-    return calculateDistance(currentLat, currentLng, location.latitude, location.latitude) <= location.radius;
-  }
-
-  double calculateDistance(double lat1, double lng1, double lat2, double lng2) {
-    return Geolocator.distanceBetween(lat1, lng1, lat2, lng2);
   }
 }

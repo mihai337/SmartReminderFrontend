@@ -5,8 +5,14 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:smartreminders/services/api_service.dart';
 
 class AuthService {
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  final ApiClient _apiClient = ApiClient();
+  final FirebaseAuth _firebaseAuth;
+  final ApiClient _apiClient;
+
+  static final AuthService _instance = AuthService.internal();
+  factory AuthService() => _instance;
+  AuthService.internal()
+      : _firebaseAuth = FirebaseAuth.instance,
+        _apiClient = ApiClient();
 
   Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
 

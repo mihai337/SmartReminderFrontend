@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:smartreminders/services/background_manager.dart';
+import 'package:smartreminders/services/location_service.dart';
 import 'package:smartreminders/theme.dart';
 import 'package:smartreminders/services/auth_service.dart';
 import 'package:smartreminders/services/notification_service.dart';
@@ -25,8 +27,9 @@ void main() async {
   
   await NotificationService().initialize();
   await NotificationService().requestPermissions();
+  await LocationService.requestPermission();
   await BackgroundService.initialize();
-  
+  BackgroundManager(); // Initialize BackgroundManager
   runApp(const MyApp());
 }
 

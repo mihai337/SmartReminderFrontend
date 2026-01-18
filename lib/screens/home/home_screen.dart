@@ -8,6 +8,8 @@ import 'package:smartreminders/screens/location/add_location_screen.dart';
 import 'package:smartreminders/screens/auth/login_screen.dart';
 import 'package:smartreminders/widgets/task_card.dart';
 
+import '../../models/observer.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -15,15 +17,30 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> implements TaskObserver {
   final AuthService _authService = AuthService();
   final TaskService _taskService = TaskService();
   TaskProfile? _selectedCategory;
 
   @override
-  Widget build(BuildContext context) {
-    final userId = _authService.currentUser?.uid ?? '';
+  void initState() {
+    super.initState();
+    _taskService.registerObserver(this);
+  }
 
+  @override
+  void dispose() {
+    _taskService.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void update(){
+    _taskService.loadTasks();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -33,10 +50,10 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildCategoryTabs(),
             Expanded(
               child: StreamBuilder<List<Task>>(
-                stream: _taskService.getActiveTasks(
-                  userId,
-                  profile:  _selectedCategory,
-                ),
+                stream: _taskService.taskStream.map((tasks) {
+                  if (_selectedCategory == null) return tasks;
+                  return tasks.where((task) => task.profile == _selectedCategory).toList();
+                }),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -102,8 +119,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHeader() {
-    final userId = _authService.currentUser?.uid ?? '';
-    
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Row(
@@ -131,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 StreamBuilder<List<Task>>(
-                  stream: _taskService.getActiveTasks(userId),
+                  stream: _taskService.taskStream,
                   builder: (context, snapshot) {
                     final count = snapshot.data?.length ?? 0;
                     return Text(
