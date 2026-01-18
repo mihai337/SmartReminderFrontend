@@ -67,13 +67,7 @@ class LocationService {
   }
 
   bool isInGeofence(double currentLat, double currentLng, SavedLocation location) {
-    final distance = Geolocator.distanceBetween(
-      currentLat,
-      currentLng,
-      location.latitude,
-      location.longitude,
-    );
-    return distance <= location.radius;
+    return calculateDistance(currentLat, currentLng, location.latitude, location.latitude) <= location.radius;
   }
 
   double calculateDistance(double lat1, double lng1, double lat2, double lng2) {

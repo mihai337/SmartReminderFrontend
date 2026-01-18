@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:smartreminders/env/config.dart';
 
 class ApiClient {
-  final String baseUrl = 'http://10.0.2.2:8080';
+
+  final String baseUrl = Config.env.apiBaseUrl;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   ApiClient();
