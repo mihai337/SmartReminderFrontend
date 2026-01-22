@@ -80,8 +80,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         );
         return;
       }
-
-      debugPrint('DEBUG: _selectedDateTime = $_selectedDateTime');
       trigger = TimeTrigger(time: _selectedDateTime);
     } else if (_selectedTriggerType == TriggerType.wifi) {
       if (_selectedWiFiSSID == null) {
@@ -90,7 +88,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         );
         return;
       }
-
+      trigger = WifiTrigger(ssid: _selectedWiFiSSID!, onEnter: _selectedStateChange);
     }
 
     final task = Task(

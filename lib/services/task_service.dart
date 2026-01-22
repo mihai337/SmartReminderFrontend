@@ -1,20 +1,20 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
 import 'package:rxdart/rxdart.dart';
-import 'package:smartreminders/models/observer.dart';
 import 'package:smartreminders/models/task.dart';
 import 'package:smartreminders/models/task_history.dart';
 import 'package:smartreminders/services/api_service.dart';
+import 'package:smartreminders/services/notification_service.dart';
 
-class TaskService implements TaskObservable {
+class TaskService{
 
-  TaskService.internal() : _api = ApiClient(), _observers = [];
+  TaskService.internal() : _api = ApiClient();
   static final TaskService _instance = TaskService.internal();
   factory TaskService() => _instance;
 
   final ApiClient _api;
-  final List<TaskObserver> _observers;
   final _controller = BehaviorSubject<List<Task>>();
 
   Stream<List<Task>> get taskStream => _controller.stream;
@@ -22,10 +22,11 @@ class TaskService implements TaskObservable {
   Future<void> createTask(Task task) async {
     try {
       final resp = await _api.post('/api/task', task.toJson());
+      debugPrint('DBG: createTask :${resp.statusCode}');
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw Exception('Create task failed: ${resp.statusCode} ${resp.body}');
       }
-      notifyObservers();
+      loadTasks();
     } catch (e) {
       rethrow;
     }
@@ -38,7 +39,7 @@ class TaskService implements TaskObservable {
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw Exception('Update task failed: ${resp.statusCode} ${resp.body}');
       }
-      notifyObservers();
+      loadTasks();
     } catch (e) {
       rethrow;
     }
@@ -50,7 +51,7 @@ class TaskService implements TaskObservable {
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
         throw Exception('Delete task failed: ${resp.statusCode} ${resp.body}');
       }
-      notifyObservers();
+      loadTasks();
     } catch (e) {
       rethrow;
     }
@@ -95,15 +96,6 @@ class TaskService implements TaskObservable {
     await updateTask(updated);
   }
 
-  // Future<void> snoozeTask(Task task, DateTime snoozeUntil) async {
-  //   // backend may handle snooze differently; here we attach snooze info in triggerConfig
-  //   final newConfig = Map<String, dynamic>.from(task.triggerConfig);
-  //   newConfig['snoozeUntil'] = snoozeUntil.toIso8601String();
-  //   final updated = task.copyWith(triggerConfig: newConfig);
-  //   await updateTask(updated);
-  //   await _addTaskHistory(task.id, task.title, HistoryAction.snoozed);
-  // }
-
   Stream<List<TaskHistory>> getTaskHistory() async* {
     try {
       final resp = await _api.get('/api/task/history');
@@ -130,23 +122,6 @@ class TaskService implements TaskObservable {
       yield history;
     } catch (e) {
       yield <TaskHistory>[];
-    }
-  }
-
-  @override
-  void registerObserver(TaskObserver observer) {
-    _observers.add(observer);
-  }
-
-  @override
-  void removeObserver(TaskObserver observer) {
-    _observers.remove(observer);
-  }
-
-  @override
-  void notifyObservers() {
-    for (var observer in _observers) {
-      observer.update();
     }
   }
 }

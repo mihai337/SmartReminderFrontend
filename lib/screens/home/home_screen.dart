@@ -8,8 +8,6 @@ import 'package:smartreminders/screens/location/add_location_screen.dart';
 import 'package:smartreminders/screens/auth/login_screen.dart';
 import 'package:smartreminders/widgets/task_card.dart';
 
-import '../../models/observer.dart';
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -17,27 +15,10 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> implements TaskObserver {
+class _HomeScreenState extends State<HomeScreen>{
   final AuthService _authService = AuthService();
   final TaskService _taskService = TaskService();
   TaskProfile? _selectedCategory;
-
-  @override
-  void initState() {
-    super.initState();
-    _taskService.registerObserver(this);
-  }
-
-  @override
-  void dispose() {
-    _taskService.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void update(){
-    _taskService.loadTasks();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,10 +52,7 @@ class _HomeScreenState extends State<HomeScreen> implements TaskObserver {
                       return TaskCard(
                         task: task,
                         onComplete: () => _taskService.completeTask(task),
-                        onSnooze: (duration) {
-                          final snoozeUntil = DateTime.now().add(duration);
-                         // _taskService.snoozeTask(task, snoozeUntil);
-                        },
+                        onSnooze: (duration) => null,
                         onDelete: () => _taskService.deleteTask(task.id!),
                       );
                     },

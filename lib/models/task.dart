@@ -32,6 +32,8 @@ abstract class Trigger {
         return TimeTrigger.fromJson(json);
       case 'LOCATION':
         return LocationTrigger.fromJson(json);
+      case 'WIFI':
+        return WifiTrigger.fromJson(json);
       default:
         throw ArgumentError('Unknown trigger type: $type');
     }
@@ -91,6 +93,31 @@ class LocationTrigger extends Trigger {
     latitude:  (json['latitude'] as num).toDouble() ,
     longitude:  (json['longitude'] as num).toDouble() ,
     radius: (json['radius'] as num).toDouble(),
+  );
+}
+
+class WifiTrigger extends Trigger {
+  final String ssid;
+
+  WifiTrigger({int? id, bool triggered = false, bool onEnter = false, required this.ssid}) : super(id: id, triggered: triggered, onEnter: onEnter);
+
+  @override
+  String get type => 'WIFI';
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'type': type,
+    'id': id,
+    'triggered': triggered,
+    'onEnter': onEnter,
+    'ssid': ssid,
+  };
+
+  static WifiTrigger fromJson(Map<String, dynamic> json) => WifiTrigger(
+    id: json['id'] as int,
+    triggered: json['triggered'] as bool? ?? false,
+    onEnter: json['onEnter'] as bool? ?? false,
+    ssid: json['ssid'] as String,
   );
 }
 

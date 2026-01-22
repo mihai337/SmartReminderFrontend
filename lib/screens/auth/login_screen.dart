@@ -21,13 +21,16 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
     
     final bool user = await _authService.loginWithGoogle();
+
+    if(user) {
+      await _taskService.loadTasks();
+    }
     
     if (!mounted) return;
     
     setState(() => _isLoading = false);
     
     if (user) {
-      _taskService.loadTasks();
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const HomeScreen()),
       );

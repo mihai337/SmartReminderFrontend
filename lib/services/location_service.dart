@@ -4,14 +4,23 @@ import 'dart:convert';
 import 'package:geolocator/geolocator.dart';
 import 'package:smartreminders/models/saved_location.dart';
 import 'package:smartreminders/services/api_service.dart';
+import 'package:smartreminders/services/notification_service.dart';
+import 'package:smartreminders/services/task_service.dart';
+
+import '../models/task.dart';
 
 
 class LocationService {
   static final LocationService _instance = LocationService.internal();
   factory LocationService() => _instance;
-  LocationService.internal(): _api = ApiClient();
+  LocationService.internal():
+        _api = ApiClient(),
+        _notificationService = NotificationService(),
+        _taskService = TaskService();
 
   final ApiClient _api;
+  final TaskService _taskService;
+  final NotificationService _notificationService;
 
   static Future<bool> requestPermission() async {
     LocationPermission permission = await Geolocator.checkPermission();
@@ -67,5 +76,34 @@ class LocationService {
     } catch (error) {
       throw Exception('Error fetching locations: $error');
     }
+  }
+
+  void monitorLocationChanges() {
+    Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 100,
+      ),
+    ).listen((Position position) async {
+      final tasks = await _taskService.taskStream.first;
+      for(var task in tasks) {
+        if (task.trigger is! LocationTrigger) continue;
+
+        final trigger = task.trigger as LocationTrigger;
+
+        final distance = Geolocator.distanceBetween(
+          position.latitude,
+          position.longitude,
+          trigger.latitude,
+          trigger.longitude,
+        );
+
+        final sendNotif = trigger.onEnter ? distance <= trigger.radius : distance >= trigger.radius;
+
+        if (sendNotif) {
+          _notificationService.showTaskNotification(task);
+        }
+      }
+    });
   }
 }
