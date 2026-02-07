@@ -1,26 +1,21 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:smartreminders/models/saved_location.dart';
 import 'package:smartreminders/services/api_service.dart';
-import 'package:smartreminders/services/notification_service.dart';
 import 'package:smartreminders/services/task_service.dart';
-
-import '../models/task.dart';
-
 
 class LocationService {
   static final LocationService _instance = LocationService.internal();
   factory LocationService() => _instance;
   LocationService.internal():
         _api = ApiClient(),
-        _notificationService = NotificationService(),
         _taskService = TaskService();
 
   final ApiClient _api;
   final TaskService _taskService;
-  final NotificationService _notificationService;
 
   static Future<bool> requestPermission() async {
     LocationPermission permission = await Geolocator.checkPermission();
@@ -78,32 +73,33 @@ class LocationService {
     }
   }
 
-  void monitorLocationChanges() {
-    Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 100,
-      ),
-    ).listen((Position position) async {
-      final tasks = await _taskService.taskStream.first;
-      for(var task in tasks) {
-        if (task.trigger is! LocationTrigger) continue;
+  static const _control = MethodChannel('location_control');
+  static const _stream = EventChannel('location_stream');
 
-        final trigger = task.trigger as LocationTrigger;
+  Stream<Map<String, dynamic>>? _locationStream;
 
-        final distance = Geolocator.distanceBetween(
-          position.latitude,
-          position.longitude,
-          trigger.latitude,
-          trigger.longitude,
-        );
+  Stream<Map<String, dynamic>> get stream {
+    _locationStream ??= _stream
+        .receiveBroadcastStream()
+        .map((e) => Map<String, dynamic>.from(e));
+    return _locationStream!;
+  }
 
-        final sendNotif = trigger.onEnter ? distance <= trigger.radius : distance >= trigger.radius;
+  Future<void> start()async {
+    await _control.invokeMethod<String>('startService')
+        .then((result) => print('Location service started: $result'))
+        .catchError((error) => print('Error starting location service: $error'));
+}
 
-        if (sendNotif) {
-          _notificationService.showTaskNotification(task);
-        }
-      }
+  Future<void> stop() => _control.invokeMethod('stopService');
+
+  void monitorLocationChanges() async {
+    await start();
+    _taskService.taskStream.listen((tasks) async {
+      // Convert each Task to Map
+      final serialized = tasks.map((t) => t.toJson()).toList();
+
+      await _control.invokeMethod<bool>('sendTasks', {'tasks': serialized});
     });
   }
 }

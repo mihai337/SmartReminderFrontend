@@ -141,6 +141,7 @@ class Task {
   });
 
   Map<String, dynamic> toJson() => {
+    'id': id,
     'title': title,
     'description': description,
     'status': status.name,

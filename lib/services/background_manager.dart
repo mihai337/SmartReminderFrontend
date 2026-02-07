@@ -14,5 +14,4 @@ class BackgroundManager{
     _wifiService.monitorWiFiChanges();
     _locationService.monitorLocationChanges();
   }
-
 }
